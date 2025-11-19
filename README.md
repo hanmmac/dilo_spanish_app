@@ -1,24 +1,60 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Dilo - Spanish Learning App
+
+A minimal, beautiful Spanish learning app with AI-powered phrase generation.
+
+## Features
+
+- 🎯 Daily checklist of 10 Spanish phrases
+- 🌍 Region-specific phrases (Spain, Mexico, Argentina, Colombia, Caribbean)
+- 📝 Formality filters (formal/informal)
+- 🤖 AI-generated phrases using OpenAI GPT-3.5-turbo
+- 🎨 Glassmorphism UI with rotating Hispanic city backgrounds
+- ✅ Progress tracking
 
 ## Getting Started
 
-First, run the development server:
+### Prerequisites
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+- Node.js 18+ 
+- npm, yarn, pnpm, or bun
+- OpenAI API key ([Get one here](https://platform.openai.com/api-keys))
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### Setup
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+1. **Install dependencies:**
+   ```bash
+   npm install
+   ```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+2. **Set up environment variables:**
+   Create a `.env.local` file in the root directory:
+   ```bash
+   OPENAI_API_KEY=your_openai_api_key_here
+   ```
+
+3. **Run the development server:**
+   ```bash
+   npm run dev
+   ```
+
+4. **Open your browser:**
+   Navigate to [http://localhost:3000](http://localhost:3000)
+
+## Project Structure
+
+- `src/app/api/phrases/` - API route for AI phrase generation
+- `src/lib/ai/` - OpenAI client and phrase generation logic
+- `src/types/phrase.ts` - TypeScript types for phrases
+- `src/app/page.tsx` - Main app page with phrase checklist
+
+## How It Works
+
+The app uses OpenAI's GPT-3.5-turbo to generate 10 Spanish phrases daily based on:
+- Selected region (general, Spain, Mexico, Argentina, etc.)
+- Formality preference (formal/informal/neutral)
+- Current date (for daily consistency)
+
+Phrases are generated on-demand when you change region or formality settings, ensuring fresh content while maintaining consistency for the same day.
 
 ## Learn More
 

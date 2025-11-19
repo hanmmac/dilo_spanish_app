@@ -52,12 +52,13 @@ export function SettingsModal({
                 <SelectValue placeholder="Select region" />
               </SelectTrigger>
               <SelectContent className="glass-dark border-white/20 bg-black/70">
-                <SelectItem value="spain" className="text-white">Spain (Castilian)</SelectItem>
-                <SelectItem value="mexico" className="text-white">Mexico</SelectItem>
-                <SelectItem value="argentina" className="text-white">Argentina</SelectItem>
-                <SelectItem value="colombia" className="text-white">Colombia</SelectItem>
-                <SelectItem value="caribbean" className="text-white">Caribbean</SelectItem>
-                <SelectItem value="general" className="text-white">General/Neutral</SelectItem>
+                {/* <SelectItem value="spain" className="text-white">Spain (Castilian)</SelectItem> */}
+                {/* <SelectItem value="mexico" className="text-white">Mexico</SelectItem> */}
+                {/* <SelectItem value="argentina" className="text-white">Argentina</SelectItem> */}
+                {/* <SelectItem value="colombia" className="text-white">Colombia</SelectItem> */}
+                {/* <SelectItem value="caribbean" className="text-white">Caribbean</SelectItem> */}
+                {/* <SelectItem value="general" className="text-white">General/Neutral</SelectItem> */}
+                <SelectItem value="costa-rica" className="text-white">Costa Rica</SelectItem>
               </SelectContent>
             </Select>
             <p className="text-xs text-white/80 text-shadow-subtle">

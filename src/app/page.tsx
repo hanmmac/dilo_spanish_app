@@ -1,13 +1,13 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import Image from "next/image";
-import { Navigation } from "@/components/Navigation";
 import { PhraseListItem } from "@/components/PhraseListItem";
 import { ProgressBar } from "@/components/ProgressBar";
 import { SettingsModal } from "@/components/SettingsModal";
 import { AlternativesModal } from "@/components/AlternativesModal";
-import { MapPin, Flame, Calendar, Globe } from "lucide-react";
+import { Auth } from "@/components/Auth";
+import { Globe, Loader2, LogOut } from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -17,103 +17,283 @@ import {
 } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
+import { Button } from "@/components/ui/button";
+import { Phrase } from "@/types/phrase";
+import { supabase } from "@/lib/supabase";
+import { getStoredPhrases, savePhrases, updatePhraseCompletion, getTodayKey, getEnglishPhrasesBase, getRecentEnglishPhrases } from "@/lib/supabase-storage";
 
-const initialPhrases = [
-  { id: 1, spanish: "Buenos días", english: "Good morning", difficulty: "Easy" as const, used: false },
-  { id: 2, spanish: "¿Cómo estás?", english: "How are you?", difficulty: "Easy" as const, used: false },
-  { id: 3, spanish: "Mucho gusto", english: "Nice to meet you", difficulty: "Easy" as const, used: false },
-  { id: 4, spanish: "¿Dónde está el baño?", english: "Where is the bathroom?", difficulty: "Medium" as const, used: false },
-  { id: 5, spanish: "Me gustaría pedir la cuenta", english: "I would like the check", difficulty: "Medium" as const, used: false },
-  { id: 6, spanish: "¿Podría ayudarme?", english: "Could you help me?", difficulty: "Medium" as const, used: false },
-  { id: 7, spanish: "No entiendo", english: "I don't understand", difficulty: "Easy" as const, used: false },
-  { id: 8, spanish: "¿Cuánto cuesta?", english: "How much does it cost?", difficulty: "Easy" as const, used: false },
-  { id: 9, spanish: "Disculpe la molestia", english: "Sorry for the trouble", difficulty: "Hard" as const, used: false },
-  { id: 10, spanish: "¿Me podrías recomendar algo?", english: "Could you recommend something?", difficulty: "Hard" as const, used: false },
-];
-
-const cityImages = [
-  { 
-    url: "https://slelguoygbfzlpylpxfs.supabase.co/storage/v1/object/public/project-uploads/9d609461-ef9a-442e-821d-706773263f56/generated_images/wide-cinematic-photograph-of-barcelona-s-29178f56-20251111204420.jpg",
+// Region-specific background images
+// All images should be placed in public/images/ directory
+const regionImages: Record<string, { url: string; city: string; country: string }> = {
+  "costa-rica": {
+    url: "/images/costa-rica-beach.jpg",
+    city: "Costa Rica",
+    country: "Costa Rica"
+  },
+  spain: {
+    url: "/images/spain-barcelona.jpg",
     city: "Barcelona",
     country: "Spain"
   },
-  { 
-    url: "https://slelguoygbfzlpylpxfs.supabase.co/storage/v1/object/public/project-uploads/9d609461-ef9a-442e-821d-706773263f56/generated_images/cinematic-aerial-photograph-of-mexico-ci-7d2177c6-20251111204418.jpg",
+  mexico: {
+    url: "/images/mexico-city.jpg",
     city: "Mexico City",
     country: "Mexico"
   },
-  { 
-    url: "https://slelguoygbfzlpylpxfs.supabase.co/storage/v1/object/public/project-uploads/9d609461-ef9a-442e-821d-706773263f56/generated_images/beautiful-wide-photograph-of-buenos-aire-1cae73d1-20251111204419.jpg",
+  argentina: {
+    url: "/images/argentina-buenos-aires.jpg",
     city: "Buenos Aires",
     country: "Argentina"
   },
-  { 
-    url: "https://slelguoygbfzlpylpxfs.supabase.co/storage/v1/object/public/project-uploads/9d609461-ef9a-442e-821d-706773263f56/generated_images/stunning-cinematic-photograph-of-old-hav-1c7bf7b6-20251111204419.jpg",
-    city: "Havana",
-    country: "Cuba"
-  },
-  { 
-    url: "https://slelguoygbfzlpylpxfs.supabase.co/storage/v1/object/public/project-uploads/9d609461-ef9a-442e-821d-706773263f56/generated_images/wide-cinematic-photograph-of-cartagena-c-ef007ee8-20251111204416.jpg",
+  colombia: {
+    url: "/images/colombia-cartagena.jpg",
     city: "Cartagena",
     country: "Colombia"
   },
-  { 
-    url: "https://slelguoygbfzlpylpxfs.supabase.co/storage/v1/object/public/project-uploads/9d609461-ef9a-442e-821d-706773263f56/generated_images/breathtaking-photograph-of-madrid-s-plaz-070fddc4-20251111204420.jpg",
-    city: "Madrid",
-    country: "Spain"
+  caribbean: {
+    url: "/images/caribbean-havana.jpg",
+    city: "Havana",
+    country: "Cuba"
   },
-  { 
-    url: "https://slelguoygbfzlpylpxfs.supabase.co/storage/v1/object/public/project-uploads/9d609461-ef9a-442e-821d-706773263f56/generated_images/stunning-wide-photograph-of-lima-peru-s--0a31adf4-20251111204418.jpg",
+  general: {
+    url: "/images/general-lima.jpg",
     city: "Lima",
     country: "Peru"
   },
-];
+};
+
+const REGION_DISPLAY_NAMES: Record<string, string> = {
+  general: "General Spanish",
+  spain: "Spain",
+  mexico: "Mexico",
+  argentina: "Argentina",
+  colombia: "Colombia",
+  caribbean: "Caribbean",
+  "costa-rica": "Costa Rica",
+};
+
+// Helper to get auth token for API requests
+async function getAuthToken(): Promise<string | null> {
+  try {
+    const { data: { session } } = await supabase.auth.getSession();
+    return session?.access_token || null;
+  } catch {
+    return null;
+  }
+}
 
 export default function Home() {
-  const [activeTab, setActiveTab] = useState<"home" | "saved" | "settings">("home");
-  const [phrases, setPhrases] = useState(initialPhrases);
+  const [user, setUser] = useState<any>(null);
+  const [authLoading, setAuthLoading] = useState(true);
+  const [phrases, setPhrases] = useState<Phrase[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [alternativesOpen, setAlternativesOpen] = useState(false);
-  const [selectedPhrase, setSelectedPhrase] = useState<{ spanish: string; english: string } | null>(null);
-  const [region, setRegion] = useState("general");
+  const [selectedPhrase, setSelectedPhrase] = useState<{ spanish: string; english: string; alternatives?: Phrase["alternatives"] } | null>(null);
+  const [region, setRegion] = useState("costa-rica");
   const [formalOnly, setFormalOnly] = useState(false);
+  const [isSwitchingFormality, setIsSwitchingFormality] = useState(false);
 
   const completedCount = phrases.filter((p) => p.used).length;
 
-  // Get today's city image (rotates daily)
-  const todayImage = useMemo(() => {
-    const dayOfYear = Math.floor((Date.now() - new Date(new Date().getFullYear(), 0, 0).getTime()) / 86400000);
-    return cityImages[dayOfYear % cityImages.length];
+  // Check authentication status
+  useEffect(() => {
+    const checkUser = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      setUser(user);
+      setAuthLoading(false);
+    };
+
+    checkUser();
+
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null);
+    });
+
+    return () => subscription.unsubscribe();
   }, []);
 
-  const handleToggleUsed = (id: number) => {
-    setPhrases((prev) =>
-      prev.map((p) => (p.id === id ? { ...p, used: !p.used } : p))
-    );
+  // Fetch phrases from API or Supabase
+  useEffect(() => {
+    if (!user) return; // Don't load phrases if not authenticated
+
+    const loadPhrases = async () => {
+      setLoading(true);
+      setError(null);
+      
+      try {
+        const formality = formalOnly ? "formal" : "neutral";
+        const today = getTodayKey(); // Use user's local timezone
+        
+        // FIRST: Check if we already have this exact combination stored (instant, free)
+        const stored = await getStoredPhrases(region, formality);
+        if (stored && stored.date === today) {
+          // We have it! Use it instantly (no API call, no loading)
+          setPhrases(stored.phrases);
+          setLoading(false);
+          setIsSwitchingFormality(false);
+          return;
+        }
+        
+        // SECOND: If we don't have this formality, but we have English phrases base, translate
+        // This makes 1 API call only the first time we switch to a new formality
+        const englishPhrasesBase = await getEnglishPhrasesBase();
+        if (englishPhrasesBase && englishPhrasesBase.length > 0) {
+          // Check if we're switching formality (region is same but formality changed)
+          const previousStored = await getStoredPhrases(); // Get any previous version
+          const isFormalityChange = previousStored ? (previousStored.region === region && previousStored.formality !== formality) : false;
+          setIsSwitchingFormality(isFormalityChange);
+          
+          // Translate existing English phrases to new region/formality (on-demand API call)
+          const englishPhrasesParam = encodeURIComponent(JSON.stringify(englishPhrasesBase));
+          const token = await getAuthToken();
+          const response = await fetch(
+            `/api/phrases?region=${region}&formality=${formality}&englishPhrases=${englishPhrasesParam}`,
+            {
+              credentials: "include",
+              headers: token ? { Authorization: `Bearer ${token}` } : {},
+            }
+          );
+          
+          if (!response.ok) {
+            // Handle authentication errors
+            if (response.status === 401) {
+              // User is not authenticated, sign them out
+              await supabase.auth.signOut();
+              setUser(null);
+              throw new Error("Session expired. Please sign in again.");
+            }
+            if (response.status === 429) {
+              const errorData = await response.json().catch(() => ({}));
+              throw new Error(errorData.message || "Rate limit exceeded. Please try again later.");
+            }
+            const errorData = await response.json().catch(() => ({}));
+            const errorMessage = errorData.message || errorData.error || response.statusText;
+            throw new Error(errorMessage);
+          }
+          
+          const data = await response.json();
+          const translatedPhrases = data.phrases || [];
+          
+          // Save translated phrases to Supabase (now stored for instant access next time)
+          await savePhrases(translatedPhrases, region, formality);
+          setPhrases(translatedPhrases);
+          setLoading(false);
+          setIsSwitchingFormality(false);
+          return;
+        }
+        
+        setIsSwitchingFormality(false);
+        
+        // THIRD: If no stored data at all, fetch new phrases from API
+        // Get recent phrases history to avoid duplicates
+        const recentPhrases = await getRecentEnglishPhrases();
+        const recentPhrasesParam = recentPhrases.length > 0 
+          ? `&recentPhrases=${encodeURIComponent(JSON.stringify(recentPhrases))}`
+          : "";
+        
+        const token = await getAuthToken();
+        const response = await fetch(
+          `/api/phrases?region=${region}&formality=${formality}&count=10&date=${today}${recentPhrasesParam}`,
+          {
+            credentials: "include",
+            headers: token ? { Authorization: `Bearer ${token}` } : {},
+          }
+        );
+        
+        if (!response.ok) {
+          // Handle authentication errors
+          if (response.status === 401) {
+            // User is not authenticated, sign them out
+            await supabase.auth.signOut();
+            setUser(null);
+            throw new Error("Session expired. Please sign in again.");
+          }
+          if (response.status === 429) {
+            const errorData = await response.json().catch(() => ({}));
+            throw new Error(errorData.message || "Rate limit exceeded. Please try again later.");
+          }
+          const errorData = await response.json().catch(() => ({}));
+          const errorMessage = errorData.message || errorData.error || response.statusText;
+          throw new Error(errorMessage);
+        }
+        
+        const data = await response.json();
+        const fetchedPhrases = data.phrases || [];
+        
+        // Save to Supabase (first time generation)
+        await savePhrases(fetchedPhrases, region, formality);
+        setPhrases(fetchedPhrases);
+      } catch (err) {
+        console.error("Error loading phrases:", err);
+        setError(err instanceof Error ? err.message : "Failed to load phrases");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadPhrases();
+  }, [user, region, formalOnly]);
+
+  // Get region-specific background image
+  const todayImage = useMemo(() => {
+    return regionImages[region] || regionImages["costa-rica"];
+  }, [region]);
+
+  const handleToggleUsed = async (id: number) => {
+    setPhrases((prev) => {
+      const updated = prev.map((p) => {
+        if (p.id === id) {
+          const newUsed = !p.used;
+          // Save to Supabase immediately (update current region/formality version)
+          const formality = formalOnly ? "formal" : "neutral";
+          updatePhraseCompletion(id, newUsed, region, formality);
+          return { ...p, used: newUsed };
+        }
+        return p;
+      });
+      return updated;
+    });
   };
 
-  const handleOpenAlternatives = (phrase: { spanish: string; english: string }) => {
+  const handleSignOut = async () => {
+    await supabase.auth.signOut();
+    setUser(null);
+  };
+
+  const handleAuthSuccess = () => {
+    // Auth state will be updated via the auth state listener
+  };
+
+  // Show auth screen if not authenticated
+  if (authLoading) {
+    return (
+      <div className="min-h-screen relative overflow-hidden flex items-center justify-center">
+        <div className="fixed inset-0 z-0">
+          <div className="absolute inset-0 bg-gradient-to-br from-purple-600/40 via-blue-600/40 to-purple-800/40" />
+          <div className="absolute inset-0 bg-black/40" />
+        </div>
+        <div className="relative z-10">
+          <Loader2 className="h-8 w-8 animate-spin text-white" />
+        </div>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return <Auth onAuthSuccess={handleAuthSuccess} />;
+  }
+
+  const handleOpenAlternatives = (phrase: { spanish: string; english: string; alternatives?: Phrase["alternatives"] }) => {
     setSelectedPhrase(phrase);
     setAlternativesOpen(true);
   };
 
-  const handleTabChange = (tab: "home" | "saved" | "settings") => {
-    setActiveTab(tab);
-  };
-
   const handleSettingsClose = (open: boolean) => {
     setSettingsOpen(open);
-    if (!open) {
-      setActiveTab("home");
-    }
   };
-
-  // Get today's date
-  const today = new Date().toLocaleDateString("en-US", { 
-    weekday: "long", 
-    month: "long", 
-    day: "numeric" 
-  });
 
   return (
     <div className="min-h-screen relative overflow-hidden">
@@ -132,82 +312,98 @@ export default function Home() {
 
       {/* Content */}
       <div className="relative z-10 min-h-screen">
-        {/* Glass Header */}
-        <header className="glass sticky top-0 z-50 border-b border-white/20">
-          <div className="max-w-5xl mx-auto px-4 sm:px-6 py-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <h1 className="text-2xl font-bold text-white font-serif text-shadow-strong">Dilo</h1>
-                <p className="text-sm text-white/90 flex items-center gap-1.5 mt-0.5 text-shadow">
-                  <MapPin className="h-3.5 w-3.5 drop-shadow-md" />
-                  {todayImage.city}, {todayImage.country}
-                </p>
-              </div>
-              <div className="flex items-center gap-6">
-                <div className="text-right hidden sm:block">
-                  <p className="text-xs text-white/80 flex items-center gap-1.5 justify-end text-shadow-subtle">
-                    <Calendar className="h-3.5 w-3.5 drop-shadow-md" />
-                    {today}
-                  </p>
-                  <p className="text-sm font-medium text-white flex items-center gap-1.5 justify-end mt-1 text-shadow">
-                    <Flame className="h-4 w-4 text-orange-400 drop-shadow-md" />
-                    7 day streak
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
-        </header>
-
-        <Navigation activeTab={activeTab} onTabChange={handleTabChange} />
-
-        {activeTab === "home" && (
-          <main className="max-w-4xl mx-auto px-4 sm:px-6 py-8 pb-24">
+        <main className="max-w-4xl mx-auto px-4 sm:px-6 py-8 pb-24">
             {/* Main glass container */}
             <div className="glass rounded-3xl p-6 sm:p-8 space-y-6">
               {/* Header inside glass */}
               <div className="space-y-4">
                 <div className="space-y-2">
-                  <h2 className="text-3xl sm:text-4xl font-bold text-white font-serif text-shadow-strong">
-                    Today's 10
-                  </h2>
-                  <p className="text-white/90 text-sm text-shadow-subtle">
-                    Say each phrase aloud and check it off
+                  <div className="flex items-baseline gap-2">
+                    <h2 className="text-3xl sm:text-4xl font-bold text-white font-serif text-shadow-strong">
+                      Dilo
+                    </h2>
+                    <span className="text-white/80 text-sm text-shadow-subtle">
+                      Say it
+                    </span>
+                  </div>
+                  <p className="text-white/80 text-sm text-shadow-subtle">
+                    incorporate each spanish phrase today and check off when you got it
                   </p>
                 </div>
 
-                {/* Region Filter */}
-                <div className="flex items-center gap-3">
-                  <Globe className="h-5 w-5 text-white drop-shadow-md flex-shrink-0" />
-                  <Select value={region} onValueChange={setRegion}>
-                    <SelectTrigger className="w-full sm:w-[280px] bg-white/20 border-white/30 text-white backdrop-blur-md text-shadow h-11">
-                      <SelectValue placeholder="Select region" />
-                    </SelectTrigger>
-                    <SelectContent className="glass-dark border-white/20 bg-black/70">
-                      <SelectItem value="general" className="text-white">General/Neutral Spanish</SelectItem>
-                      <SelectItem value="spain" className="text-white">Spain (Castilian)</SelectItem>
-                      <SelectItem value="mexico" className="text-white">Mexico</SelectItem>
-                      <SelectItem value="argentina" className="text-white">Argentina</SelectItem>
-                      <SelectItem value="colombia" className="text-white">Colombia</SelectItem>
-                      <SelectItem value="caribbean" className="text-white">Caribbean</SelectItem>
-                    </SelectContent>
-                  </Select>
+                {/* Region Filter and Formal Toggle */}
+                <div className="flex items-center justify-between gap-4">
+                  <div className="flex items-center gap-3 flex-1">
+                    <Globe className="h-5 w-5 text-white drop-shadow-md flex-shrink-0" />
+                    <Select value={region} onValueChange={setRegion}>
+                      <SelectTrigger className="w-full sm:w-[280px] bg-white/20 border-white/30 text-white backdrop-blur-md text-shadow h-11">
+                        <SelectValue placeholder="Select region" />
+                      </SelectTrigger>
+                      <SelectContent className="glass-dark border-white/20 bg-black/70">
+                        {/* <SelectItem value="general" className="text-white">General/Neutral Spanish</SelectItem> */}
+                        {/* <SelectItem value="spain" className="text-white">Spain (Castilian)</SelectItem> */}
+                        {/* <SelectItem value="mexico" className="text-white">Mexico</SelectItem> */}
+                        {/* <SelectItem value="argentina" className="text-white">Argentina</SelectItem> */}
+                        {/* <SelectItem value="colombia" className="text-white">Colombia</SelectItem> */}
+                        {/* <SelectItem value="caribbean" className="text-white">Caribbean</SelectItem> */}
+                        <SelectItem value="costa-rica" className="text-white">Costa Rica</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Label htmlFor="formal-mode" className="text-xs text-white/80 text-shadow-subtle cursor-pointer">
+                      Formal
+                    </Label>
+                    <Switch
+                      id="formal-mode"
+                      checked={formalOnly}
+                      onCheckedChange={setFormalOnly}
+                    />
+                  </div>
                 </div>
               </div>
 
               <ProgressBar completed={completedCount} total={phrases.length} />
 
+              {/* Loading State */}
+              {loading && (
+                <div className="flex items-center justify-center py-12">
+                  <Loader2 className="h-8 w-8 animate-spin text-white" />
+                  <span className="ml-3 text-white text-shadow">
+                    {isSwitchingFormality 
+                      ? "Switch today's phrases to formal translation"
+                      : "Generating today's phrases..."}
+                  </span>
+                </div>
+              )}
+
+              {/* Error State */}
+              {error && !loading && (
+                <div className="glass-dark rounded-2xl p-6 text-center">
+                  <p className="text-red-300 mb-2 text-shadow">Error loading phrases</p>
+                  <p className="text-white/70 text-sm text-shadow-subtle">{error}</p>
+                  <button
+                    onClick={() => window.location.reload()}
+                    className="mt-4 px-4 py-2 bg-white/20 hover:bg-white/30 rounded-lg text-white text-sm transition-colors"
+                  >
+                    Retry
+                  </button>
+                </div>
+              )}
+
               {/* Phrases List */}
-              <div className="space-y-2.5">
-                {phrases.map((phrase) => (
-                  <PhraseListItem
-                    key={phrase.id}
-                    {...phrase}
-                    onToggleUsed={handleToggleUsed}
-                    onOpenAlternatives={handleOpenAlternatives}
-                  />
-                ))}
-              </div>
+              {!loading && !error && (
+                <div className="space-y-2">
+                  {phrases.map((phrase) => (
+                    <PhraseListItem
+                      key={phrase.id}
+                      {...phrase}
+                      onToggleUsed={handleToggleUsed}
+                      onOpenAlternatives={handleOpenAlternatives}
+                    />
+                  ))}
+                </div>
+              )}
 
               {/* Completion message */}
               {completedCount === phrases.length && (
@@ -220,86 +416,29 @@ export default function Home() {
                   </p>
                 </div>
               )}
-            </div>
 
-            {/* Next pack card */}
-            {completedCount < phrases.length && (
-              <div className="mt-6 glass rounded-2xl p-6 text-center">
-                <p className="text-white text-sm text-shadow">
-                  🔒 Next pack unlocks tomorrow at midnight
-                </p>
-              </div>
-            )}
-          </main>
-        )}
-
-        {activeTab === "saved" && (
-          <main className="max-w-4xl mx-auto px-4 sm:px-6 py-16">
-            <div className="glass rounded-3xl p-12 text-center">
-              <div className="h-16 w-16 rounded-full bg-white/20 flex items-center justify-center mx-auto mb-4">
-                <span className="text-3xl">🔖</span>
-              </div>
-              <h2 className="text-2xl font-bold text-white font-serif mb-2 text-shadow-strong">Saved Phrases</h2>
-              <p className="text-white/80 text-shadow-subtle">
-                Your bookmarked phrases will appear here
-              </p>
-            </div>
-          </main>
-        )}
-
-        {activeTab === "settings" && (
-          <main className="max-w-4xl mx-auto px-4 sm:px-6 py-16">
-            <div className="glass rounded-3xl p-8 sm:p-12">
-              <div className="max-w-md mx-auto space-y-8">
-                <div className="text-center">
-                  <div className="h-16 w-16 rounded-full bg-white/20 flex items-center justify-center mx-auto mb-4">
-                    <span className="text-3xl">⚙️</span>
-                  </div>
-                  <h2 className="text-2xl font-bold text-white font-serif mb-2 text-shadow-strong">Settings</h2>
-                  <p className="text-white/80 text-shadow-subtle">
-                    Customize your learning experience
+              {/* Next pack card */}
+              {completedCount < phrases.length && (
+                <div className="mt-6 glass rounded-2xl p-6 text-center">
+                  <p className="text-white text-sm text-shadow">
+                    🔒 Next pack unlocks tomorrow at midnight
                   </p>
                 </div>
+              )}
 
-                <div className="space-y-6">
-                  <div className="space-y-2">
-                    <Label htmlFor="region" className="text-white text-shadow">Spanish Region</Label>
-                    <Select value={region} onValueChange={setRegion}>
-                      <SelectTrigger id="region" className="bg-white/20 border-white/30 text-white backdrop-blur-md text-shadow h-11">
-                        <SelectValue placeholder="Select region" />
-                      </SelectTrigger>
-                      <SelectContent className="glass-dark border-white/20 bg-black/70">
-                        <SelectItem value="general" className="text-white">General/Neutral Spanish</SelectItem>
-                        <SelectItem value="spain" className="text-white">Spain (Castilian)</SelectItem>
-                        <SelectItem value="mexico" className="text-white">Mexico</SelectItem>
-                        <SelectItem value="argentina" className="text-white">Argentina</SelectItem>
-                        <SelectItem value="colombia" className="text-white">Colombia</SelectItem>
-                        <SelectItem value="caribbean" className="text-white">Caribbean</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <p className="text-xs text-white/80 text-shadow-subtle">
-                      Learn phrases specific to your region
-                    </p>
-                  </div>
-
-                  <div className="flex items-center justify-between pt-2">
-                    <div className="space-y-0.5">
-                      <Label htmlFor="formal-mode" className="text-white text-shadow">Formal Mode</Label>
-                      <p className="text-xs text-white/80 text-shadow-subtle">
-                        Show only formal (usted) forms
-                      </p>
-                    </div>
-                    <Switch
-                      id="formal-mode"
-                      checked={formalOnly}
-                      onCheckedChange={setFormalOnly}
-                    />
-                  </div>
-                </div>
+              {/* Sign Out Button */}
+              <div className="mt-6 pt-6 border-t border-white/20">
+                <Button
+                  onClick={handleSignOut}
+                  variant="ghost"
+                  className="w-full bg-white/10 hover:bg-white/20 text-white border border-white/20 backdrop-blur-md"
+                >
+                  <LogOut className="h-4 w-4 mr-2" />
+                  Sign Out
+                </Button>
               </div>
             </div>
           </main>
-        )}
       </div>
 
       <SettingsModal

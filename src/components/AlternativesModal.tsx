@@ -9,30 +9,14 @@ import {
 } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { Sparkles } from "lucide-react";
+import { PhraseAlternative } from "@/types/phrase";
 
 interface AlternativesModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  phrase: { spanish: string; english: string } | null;
+  phrase: { spanish: string; english: string; alternatives?: PhraseAlternative[] } | null;
   region: string;
 }
-
-const alternativesData: Record<
-  string,
-  Array<{ text: string; region: string; formality: string }>
-> = {
-  "¿Cómo estás?": [
-    { text: "¿Qué tal?", region: "General", formality: "Informal" },
-    { text: "¿Cómo te va?", region: "General", formality: "Informal" },
-    { text: "¿Qué onda?", region: "Mexico", formality: "Very Informal" },
-    { text: "¿Cómo andas?", region: "Argentina", formality: "Informal" },
-  ],
-  "Buenos días": [
-    { text: "Buen día", region: "Argentina", formality: "Neutral" },
-    { text: "Qué tal", region: "Spain", formality: "Informal" },
-    { text: "Hola", region: "General", formality: "Neutral" },
-  ],
-};
 
 export function AlternativesModal({
   open,
@@ -40,11 +24,11 @@ export function AlternativesModal({
   phrase,
   region,
 }: AlternativesModalProps) {
-  const alternatives = phrase ? alternativesData[phrase.spanish] || [] : [];
+  const alternatives = phrase?.alternatives || [];
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-lg glass border-white/30">
+      <DialogContent className="sm:max-w-lg glass-dark border-white/30 bg-black/80 backdrop-blur-xl">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-white font-serif text-2xl">
             <Sparkles className="h-5 w-5 text-white" />
@@ -65,24 +49,24 @@ export function AlternativesModal({
               <p className="text-sm text-white/80">{phrase.english}</p>
             </div>
 
-            <div className="space-y-3">
+            <div className="space-y-3 max-h-[400px] overflow-y-auto">
               {alternatives.length > 0 ? (
                 alternatives.map((alt, index) => (
                   <div
                     key={index}
-                    className="p-3 border border-white/20 rounded-xl bg-white/5 hover:bg-white/10 transition-colors backdrop-blur-sm"
+                    className="p-4 border border-white/30 rounded-xl bg-white/10 hover:bg-white/15 transition-colors backdrop-blur-sm shadow-lg"
                   >
-                    <div className="flex items-start justify-between gap-2 mb-2">
-                      <p className="font-semibold text-white font-serif">{alt.text}</p>
+                    <div className="flex items-start justify-between gap-3 mb-2">
+                      <p className="font-semibold text-white font-serif text-lg flex-1">{alt.text}</p>
                       <Badge
                         variant="outline"
-                        className="text-xs whitespace-nowrap bg-white/10 text-white border-white/30"
+                        className="text-xs whitespace-nowrap bg-white/20 text-white border-white/40 flex-shrink-0"
                       >
                         {alt.region}
                       </Badge>
                     </div>
-                    <p className="text-xs text-white/70">
-                      Formality: {alt.formality}
+                    <p className="text-sm text-white/80 font-medium">
+                      Formality: <span className="text-white">{alt.formality}</span>
                     </p>
                   </div>
                 ))

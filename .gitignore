@@ -36,3 +36,14 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# environment variables
+.env.local
+.env*.local
+
+# data files
+# Uncomment if PDF files are too large for git
+# data/raw/*.pdf
+# Or ignore all raw data files:
+# data/raw/*
+# Processed JSON files should be committed
