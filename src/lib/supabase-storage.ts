@@ -12,6 +12,12 @@ interface StoredPhrases {
 
 const HISTORY_DAYS = 14; // Track history for 14 days to prevent duplicates
 
+type UserPhraseRecord = {
+  phrases: Phrase[];
+  region: string;
+  formality: string;
+};
+
 /**
  * Get today's date in user's local timezone as YYYY-MM-DD
  */
@@ -197,7 +203,7 @@ export async function updatePhraseCompletion(
     // Update all matching records for today and region
     let query = supabase
       .from("user_phrases")
-      .select("phrases")
+      .select("phrases, region, formality")
       .eq("user_id", userId)
       .eq("date", today);
 
@@ -212,10 +218,12 @@ export async function updatePhraseCompletion(
       return;
     }
 
-    if (!records || records.length === 0) return;
+    const typedRecords = (records as UserPhraseRecord[] | null) ?? null;
+
+    if (!typedRecords || typedRecords.length === 0) return;
 
     // Update each record
-    for (const record of records) {
+    for (const record of typedRecords) {
       const updatedPhrases = (record.phrases as Phrase[]).map((p: Phrase) =>
         p.id === phraseId ? { ...p, used } : p
       );
