@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef } from "react";
 import confetti from "canvas-confetti";
 
 interface ProgressBarProps {
@@ -9,11 +9,13 @@ interface ProgressBarProps {
 }
 
 export function ProgressBar({ completed, total }: ProgressBarProps) {
-  const [prevCompleted, setPrevCompleted] = useState(completed);
+  const prevCompletedRef = useRef(completed);
   const percentage = Math.round((completed / total) * 100);
 
   useEffect(() => {
-    if (completed > prevCompleted && completed === total) {
+    const previousCompleted = prevCompletedRef.current;
+
+    if (completed > previousCompleted && completed === total) {
       // Trigger confetti when all tasks are completed
       confetti({
         particleCount: 150,
@@ -22,8 +24,8 @@ export function ProgressBar({ completed, total }: ProgressBarProps) {
         colors: ["#ffffff", "#fbbf24", "#f59e0b", "#fb923c"],
       });
     }
-    setPrevCompleted(completed);
-  }, [completed, prevCompleted, total]);
+    prevCompletedRef.current = completed;
+  }, [completed, total]);
 
   return (
     <div className="w-full">

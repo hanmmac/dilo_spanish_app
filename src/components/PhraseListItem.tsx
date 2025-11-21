@@ -28,15 +28,14 @@ export function PhraseListItem({
   onOpenAlternatives,
 }: PhraseListItemProps) {
   const [isSpeaking, setIsSpeaking] = useState(false);
-  const [speechSupported, setSpeechSupported] = useState(false);
+  const [speechSupported] = useState(() => {
+    return typeof window !== "undefined" && "speechSynthesis" in window;
+  });
 
   useEffect(() => {
-    // Check if browser supports Web Speech API
-    setSpeechSupported('speechSynthesis' in window);
-
     // Cleanup: stop speaking when component unmounts
     return () => {
-      if (window.speechSynthesis) {
+      if (typeof window !== "undefined" && window.speechSynthesis) {
         window.speechSynthesis.cancel();
       }
     };

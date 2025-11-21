@@ -1,10 +1,6 @@
-import nextConfig from "eslint-config-next";
-import importPlugin from "eslint-plugin-import";
-
-const customOverrides = {
-  plugins: {
-    import: importPlugin,
-  },
+module.exports = {
+  extends: ["next/core-web-vitals"],
+  plugins: ["import"],
   rules: {
     "react/no-unescaped-entities": "off",
     "@next/next/no-img-element": "off",
@@ -22,8 +18,4 @@ const customOverrides = {
     "import/no-useless-path-segments": "error",
   },
 };
-
-const eslintConfig = [...nextConfig, customOverrides];
-
-export default eslintConfig;
 
