@@ -34,7 +34,7 @@ export function PhraseListItem({
   });
 
   useEffect(() => {
-    // Cleanup: stop speaking when component unmounts
+    // Clean: stop speaking when component unmounts
     return () => {
       if (typeof window !== "undefined" && window.speechSynthesis) {
         window.speechSynthesis.cancel();
@@ -42,344 +42,344 @@ export function PhraseListItem({
     };
   }, []);
 
-const difficultyColors = {
-  Easy: "bg-emerald-500/30 text-white border-white/40 backdrop-blur-sm shadow-lg",
-  Medium: "bg-amber-500/30 text-white border-white/40 backdrop-blur-sm shadow-lg",
-  Hard: "bg-rose-500/30 text-white border-white/40 backdrop-blur-sm shadow-lg",
-};
+  const difficultyColors = {
+    Easy: "bg-emerald-500/30 text-white border-white/40 backdrop-blur-sm shadow-lg",
+    Medium: "bg-amber-500/30 text-white border-white/40 backdrop-blur-sm shadow-lg",
+    Hard: "bg-rose-500/30 text-white border-white/40 backdrop-blur-sm shadow-lg",
+  };
 
-const REFLEXIVE_PRONOUNS = new Set(["me", "te", "se", "nos", "os"]);
-const REFLEXIVE_SUFFIXES = ["me", "te", "se", "nos", "os"];
-const RED_FLAG_SUFFIXES = [
-  "cion",
-  "sion",
-  "xion",
-  "dad",
-  "tad",
-  "tud",
-  "mente",
-  "encia",
-  "ancia",
-  "ador",
-  "adora",
-  "adores",
-  "adoras",
-  "ista",
-];
-const HABER_FORMS = new Set([
-  "he",
-  "has",
-  "ha",
-  "hay",
-  "hemos",
-  "habeis",
-  "han",
-  "habia",
-  "habias",
-  "habiamos",
-  "habiais",
-  "habian",
-  "habre",
-  "habras",
-  "habra",
-  "habremos",
-  "habreis",
-  "habran",
-  "habria",
-  "habrias",
-  "habriamos",
-  "habriais",
-  "habrian",
-  "hube",
-  "hubiste",
-  "hubo",
-  "hubimos",
-  "hubisteis",
-  "hubieron",
-  "haya",
-  "hayas",
-  "hayamos",
-  "hayais",
-  "hayan",
-  "hubiera",
-  "hubieras",
-  "hubieramos",
-  "hubierais",
-  "hubieran",
-  "hubiese",
-  "hubieses",
-  "hubiesemos",
-  "hubieseis",
-  "hubiesen",
-]);
-const ESTAR_FORMS = new Set([
-  "estoy",
-  "estas",
-  "esta",
-  "estamos",
-  "estais",
-  "estan",
-  "estaba",
-  "estabas",
-  "estabamos",
-  "estabais",
-  "estaban",
-  "estare",
-  "estaras",
-  "estara",
-  "estaremos",
-  "estareis",
-  "estaran",
-  "estaria",
-  "estarias",
-  "estariamos",
-  "estariais",
-  "estarian",
-  "este",
-  "estes",
-  "estemos",
-  "esteis",
-  "esten",
-]);
-const IRREGULAR_PARTICIPLES = new Set([
-  "abierto",
-  "cubierto",
-  "dicho",
-  "escrito",
-  "hecho",
-  "muerto",
-  "puesto",
-  "resuelto",
-  "roto",
-  "visto",
-  "vuelto",
-  "devuelto",
-  "descubierto",
-  "impreso",
-  "frito",
-]);
-const VERB_ENDINGS = [
-  "amos",
-  "ais",
-  "as",
-  "an",
-  "emos",
-  "eis",
-  "es",
-  "en",
-  "imos",
-  "is",
-  "aste",
-  "o",
-  "asteis",
-  "aron",
-  "iste",
-  "io",
-  "isteis",
-  "ieron",
-  "aba",
-  "abas",
-  "abamos",
-  "abais",
-  "aban",
-  "ia",
-  "ias",
-  "iamos",
-  "iais",
-  "ian",
-  "are",
-  "aras",
-  "ara",
-  "aremos",
-  "areis",
-  "aran",
-  "ere",
-  "eras",
-  "era",
-  "eremos",
-  "ereis",
-  "eran",
-  "ire",
-  "iras",
-  "ira",
-  "iremos",
-  "ireis",
-  "iran",
-  "aria",
-  "arias",
-  "ariamos",
-  "ariais",
-  "arian",
-  "eria",
-  "erias",
-  "eriamos",
-  "eriais",
-  "erian",
-  "iria",
-  "irias",
-  "iriamos",
-  "iriais",
-  "irian",
-  "ando",
-  "iendo",
-  "yendo",
-  "ado",
-  "ido",
-];
+  const REFLEXIVE_PRONOUNS = new Set(["me", "te", "se", "nos", "os"]);
+  const REFLEXIVE_SUFFIXES = ["me", "te", "se", "nos", "os"];
+  const RED_FLAG_SUFFIXES = [
+    "cion",
+    "sion",
+    "xion",
+    "dad",
+    "tad",
+    "tud",
+    "mente",
+    "encia",
+    "ancia",
+    "ador",
+    "adora",
+    "adores",
+    "adoras",
+    "ista",
+  ];
+  const HABER_FORMS = new Set([
+    "he",
+    "has",
+    "ha",
+    "hay",
+    "hemos",
+    "habeis",
+    "han",
+    "habia",
+    "habias",
+    "habiamos",
+    "habiais",
+    "habian",
+    "habre",
+    "habras",
+    "habra",
+    "habremos",
+    "habreis",
+    "habran",
+    "habria",
+    "habrias",
+    "habriamos",
+    "habriais",
+    "habrian",
+    "hube",
+    "hubiste",
+    "hubo",
+    "hubimos",
+    "hubisteis",
+    "hubieron",
+    "haya",
+    "hayas",
+    "hayamos",
+    "hayais",
+    "hayan",
+    "hubiera",
+    "hubieras",
+    "hubieramos",
+    "hubierais",
+    "hubieran",
+    "hubiese",
+    "hubieses",
+    "hubiesemos",
+    "hubieseis",
+    "hubiesen",
+  ]);
+  const ESTAR_FORMS = new Set([
+    "estoy",
+    "estas",
+    "esta",
+    "estamos",
+    "estais",
+    "estan",
+    "estaba",
+    "estabas",
+    "estabamos",
+    "estabais",
+    "estaban",
+    "estare",
+    "estaras",
+    "estara",
+    "estaremos",
+    "estareis",
+    "estaran",
+    "estaria",
+    "estarias",
+    "estariamos",
+    "estariais",
+    "estarian",
+    "este",
+    "estes",
+    "estemos",
+    "esteis",
+    "esten",
+  ]);
+  const IRREGULAR_PARTICIPLES = new Set([
+    "abierto",
+    "cubierto",
+    "dicho",
+    "escrito",
+    "hecho",
+    "muerto",
+    "puesto",
+    "resuelto",
+    "roto",
+    "visto",
+    "vuelto",
+    "devuelto",
+    "descubierto",
+    "impreso",
+    "frito",
+  ]);
+  const VERB_ENDINGS = [
+    "amos",
+    "ais",
+    "as",
+    "an",
+    "emos",
+    "eis",
+    "es",
+    "en",
+    "imos",
+    "is",
+    "aste",
+    "o",
+    "asteis",
+    "aron",
+    "iste",
+    "io",
+    "isteis",
+    "ieron",
+    "aba",
+    "abas",
+    "abamos",
+    "abais",
+    "aban",
+    "ia",
+    "ias",
+    "iamos",
+    "iais",
+    "ian",
+    "are",
+    "aras",
+    "ara",
+    "aremos",
+    "areis",
+    "aran",
+    "ere",
+    "eras",
+    "era",
+    "eremos",
+    "ereis",
+    "eran",
+    "ire",
+    "iras",
+    "ira",
+    "iremos",
+    "ireis",
+    "iran",
+    "aria",
+    "arias",
+    "ariamos",
+    "ariais",
+    "arian",
+    "eria",
+    "erias",
+    "eriamos",
+    "eriais",
+    "erian",
+    "iria",
+    "irias",
+    "iriamos",
+    "iriais",
+    "irian",
+    "ando",
+    "iendo",
+    "yendo",
+    "ado",
+    "ido",
+  ];
 
-const stripDiacritics = (value: string) =>
-  value.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+  const stripDiacritics = (value: string) =>
+    value.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
 
-// Blacklist of common non-verb words that match verb patterns
-const NON_VERB_WORDS = new Set([
-  // Articles & Pronouns
-  "mas", "más", "las", "los", "que", "quien", "quienes", "cual", "cuales", 
-  "cuando", "donde", "cuanto", "cuanta", "cuantos", "cuantas",
-  
-  // Prepositions/Conjunctions (excluding "para" and "como" which can be verbs)
-  "por", "pero", "hasta", "desde", "sobre", "bajo", "entre", 
-  "contra", "sin", "con", "hacia", "según", "durante", "mediante",
-  
-  // Demonstratives (excluding "está" which is a verb)
-  "esta", "este", "estos", "estas", "eso", "esa", "esos", "esas",
-  "aquel", "aquella", "aquellos", "aquellas",
-  
-  // Common nouns (plural)
-  "ingredientes", "ingrediente", "personas", "persona", "cosas", "cosa",
-  "casas", "casa", "mesas", "mesa", "manos", "mano", "ojos", "ojo",
-  "pies", "pie", "cabezas", "cabeza", "platos", "plato", "bebidas", "bebida",
-  "comidas", "comida", "ciudades", "ciudad", "países", "país", 
-  "amigos", "amigo", "amigas", "amiga",
-  
-  // Time/Date words
-  "tiempo", "tiempos", "lugar", "lugares", "manera", "maneras",
-  "dia", "día", "dias", "días", "año", "años", "mes", "meses",
-  "vez", "veces", "hora", "horas", "minuto", "minutos", "segundo", "segundos",
-  "semana", "semanas", "hoy", "ayer", "mañana", "tarde", "noche",
-  
-  // Adjectives
-  "bueno", "buena", "buenos", "buenas", "malo", "mala", "malos", "malas",
-  "grande", "grandes", "pequeño", "pequeña", "pequeños", "pequeñas",
-  "rojo", "roja", "rojos", "rojas", "azul", "azules", "verde", "verdes",
-  "blanco", "blanca", "blancos", "blancas", "negro", "negra", "negros", "negras",
-  
-  // Adverbs/Modifiers
-  "menos", "muy", "tan", "tanto", "tanta", "tantos", "tantas",
-  "siempre", "nunca", "ahora", "después", "antes",
-  
-  // Other common words
-  "gente", "parte", "partes", "forma", "formas", "modo", "modos"
-]);
+  // Blacklist of common non-verb words that match verb patterns
+  const NON_VERB_WORDS = new Set([
+    // Articles & Pronouns
+    "mas", "más", "las", "los", "que", "quien", "quienes", "cual", "cuales",
+    "cuando", "donde", "cuanto", "cuanta", "cuantos", "cuantas",
 
-// Check if an ambiguous word is likely a verb based on context
-const isAmbiguousWordAVerb = (
-  plainWord: string,
-  tokens: Array<{ plain: string; isWord: boolean }>,
-  index: number
-): boolean => {
-  const nextIndex = index + 1;
-  const nextToken = tokens[nextIndex];
+    // Prepositions/Conjunctions (excluding "para" and "como" which can be verbs)
+    "por", "pero", "hasta", "desde", "sobre", "bajo", "entre",
+    "contra", "sin", "con", "hacia", "según", "durante", "mediante",
 
-  // "para" - if followed by noun/article/infinitive, likely preposition (not verb)
-  if (plainWord === "para") {
-    if (nextToken?.isWord) {
-      const nextPlain = nextToken.plain;
-      // If followed by article (el, la, los, las, un, una) or infinitive ending, it's a preposition
-      if (
-        ["el", "la", "los", "las", "un", "una", "uno"].includes(nextPlain) ||
-        (nextPlain.length >= 4 && (nextPlain.endsWith("ar") || nextPlain.endsWith("er") || nextPlain.endsWith("ir")))
-      ) {
-        return false; // It's a preposition, not a verb
+    // Demonstratives (excluding "está" which is a verb)
+    "esta", "este", "estos", "estas", "eso", "esa", "esos", "esas",
+    "aquel", "aquella", "aquellos", "aquellas",
+
+    // Common nouns (plural)
+    "ingredientes", "ingrediente", "personas", "persona", "cosas", "cosa",
+    "casas", "casa", "mesas", "mesa", "manos", "mano", "ojos", "ojo",
+    "pies", "pie", "cabezas", "cabeza", "platos", "plato", "bebidas", "bebida",
+    "comidas", "comida", "ciudades", "ciudad", "países", "país",
+    "amigos", "amigo", "amigas", "amiga",
+
+    // Time/Date words
+    "tiempo", "tiempos", "lugar", "lugares", "manera", "maneras",
+    "dia", "día", "dias", "días", "año", "años", "mes", "meses",
+    "vez", "veces", "hora", "horas", "minuto", "minutos", "segundo", "segundos",
+    "semana", "semanas", "hoy", "ayer", "mañana", "tarde", "noche",
+
+    // Adjectives
+    "bueno", "buena", "buenos", "buenas", "malo", "mala", "malos", "malas",
+    "grande", "grandes", "pequeño", "pequeña", "pequeños", "pequeñas",
+    "rojo", "roja", "rojos", "rojas", "azul", "azules", "verde", "verdes",
+    "blanco", "blanca", "blancos", "blancas", "negro", "negra", "negros", "negras",
+
+    // Adverbs/Modifiers
+    "menos", "muy", "tan", "tanto", "tanta", "tantos", "tantas",
+    "siempre", "nunca", "ahora", "después", "antes",
+
+    // Other common words
+    "gente", "parte", "partes", "forma", "formas", "modo", "modos"
+  ]);
+
+  // Check if an ambiguous word is likely a verb based on context
+  const isAmbiguousWordAVerb = (
+    plainWord: string,
+    tokens: Array<{ plain: string; isWord: boolean }>,
+    index: number
+  ): boolean => {
+    const nextIndex = index + 1;
+    const nextToken = tokens[nextIndex];
+
+    // "para" - if followed by noun/article/infinitive, likely preposition (not verb)
+    if (plainWord === "para") {
+      if (nextToken?.isWord) {
+        const nextPlain = nextToken.plain;
+        // If followed by article (el, la, los, las, un, una) or infinitive ending, it's a preposition
+        if (
+          ["el", "la", "los", "las", "un", "una", "uno"].includes(nextPlain) ||
+          (nextPlain.length >= 4 && (nextPlain.endsWith("ar") || nextPlain.endsWith("er") || nextPlain.endsWith("ir")))
+        ) {
+          return false; // It's a preposition, not a verb
+        }
+      }
+      // Otherwise, could be a verb - let it through
+      return true;
+    }
+
+    // "como" - if followed by noun/adjective/article, likely adverb (not verb)
+    if (plainWord === "como") {
+      if (nextToken?.isWord) {
+        const nextPlain = nextToken.plain;
+        // If followed by article, pronoun, or longer word (likely noun/adjective), it's an adverb
+        if (
+          ["el", "la", "los", "las", "un", "una", "tú", "él", "ella", "usted", "nosotros", "nosotras", "vosotros", "vosotras", "ellos", "ellas", "ustedes"].includes(nextPlain) ||
+          nextPlain.length > 3 // Common nouns/adjectives are usually longer
+        ) {
+          return false; // It's an adverb, not a verb
+        }
+      }
+      // Otherwise, could be a verb - let it through
+      return true;
+    }
+
+    // Default: not an ambiguous word we're checking
+    return true;
+  };
+
+  const baseVerbHeuristic = (
+    plainWord: string,
+    tokens?: Array<{ plain: string; isWord: boolean }>,
+    index?: number
+  ): boolean => {
+    if (!plainWord || plainWord.length < 3) return false;
+
+    // Check blacklist first
+    if (NON_VERB_WORDS.has(plainWord)) return false;
+
+    // Check ambiguous words with context
+    if (tokens && index !== undefined && (plainWord === "para" || plainWord === "como")) {
+      if (!isAmbiguousWordAVerb(plainWord, tokens, index)) {
+        return false;
       }
     }
-    // Otherwise, could be a verb - let it through
-    return true;
-  }
 
-  // "como" - if followed by noun/adjective/article, likely adverb (not verb)
-  if (plainWord === "como") {
-    if (nextToken?.isWord) {
-      const nextPlain = nextToken.plain;
-      // If followed by article, pronoun, or longer word (likely noun/adjective), it's an adverb
-      if (
-        ["el", "la", "los", "las", "un", "una", "tú", "él", "ella", "usted", "nosotros", "nosotras", "vosotros", "vosotras", "ellos", "ellas", "ustedes"].includes(nextPlain) ||
-        nextPlain.length > 3 // Common nouns/adjectives are usually longer
-      ) {
-        return false; // It's an adverb, not a verb
+    if (
+      plainWord.length >= 4 &&
+      (plainWord.endsWith("ar") || plainWord.endsWith("er") || plainWord.endsWith("ir"))
+    ) {
+      return true;
+    }
+    return VERB_ENDINGS.some((ending) => plainWord.endsWith(ending));
+  };
+
+  const hasRedFlagSuffix = (plainWord: string): boolean => {
+    return RED_FLAG_SUFFIXES.some((suffix) => plainWord.endsWith(suffix));
+  };
+
+  const isReflexiveInfinitive = (plainWord: string): boolean => {
+    return (
+      plainWord.endsWith("se") &&
+      (plainWord.endsWith("arse") || plainWord.endsWith("erse") || plainWord.endsWith("irse"))
+    );
+  };
+
+  const hasAttachedReflexivePronoun = (plainWord: string): boolean => {
+    for (const suffix of REFLEXIVE_SUFFIXES) {
+      if (plainWord.length > suffix.length && plainWord.endsWith(suffix)) {
+        const base = plainWord.slice(0, -suffix.length);
+        if (baseVerbHeuristic(base)) {
+          return true;
+        }
       }
     }
-    // Otherwise, could be a verb - let it through
-    return true;
-  }
+    return false;
+  };
 
-  // Default: not an ambiguous word we're checking
-  return true;
-};
+  const isPastParticiple = (plainWord: string): boolean => {
+    return (
+      plainWord.endsWith("ado") ||
+      plainWord.endsWith("ido") ||
+      IRREGULAR_PARTICIPLES.has(plainWord)
+    );
+  };
 
-const baseVerbHeuristic = (
-  plainWord: string,
-  tokens?: Array<{ plain: string; isWord: boolean }>,
-  index?: number
-): boolean => {
-  if (!plainWord || plainWord.length < 3) return false;
-  
-  // Check blacklist first
-  if (NON_VERB_WORDS.has(plainWord)) return false;
-  
-  // Check ambiguous words with context
-  if (tokens && index !== undefined && (plainWord === "para" || plainWord === "como")) {
-    if (!isAmbiguousWordAVerb(plainWord, tokens, index)) {
-      return false;
-    }
-  }
-  
-  if (
-    plainWord.length >= 4 &&
-    (plainWord.endsWith("ar") || plainWord.endsWith("er") || plainWord.endsWith("ir"))
-  ) {
-    return true;
-  }
-  return VERB_ENDINGS.some((ending) => plainWord.endsWith(ending));
-};
-
-const hasRedFlagSuffix = (plainWord: string): boolean => {
-  return RED_FLAG_SUFFIXES.some((suffix) => plainWord.endsWith(suffix));
-};
-
-const isReflexiveInfinitive = (plainWord: string): boolean => {
-  return (
-    plainWord.endsWith("se") &&
-    (plainWord.endsWith("arse") || plainWord.endsWith("erse") || plainWord.endsWith("irse"))
-  );
-};
-
-const hasAttachedReflexivePronoun = (plainWord: string): boolean => {
-  for (const suffix of REFLEXIVE_SUFFIXES) {
-    if (plainWord.length > suffix.length && plainWord.endsWith(suffix)) {
-      const base = plainWord.slice(0, -suffix.length);
-      if (baseVerbHeuristic(base)) {
-        return true;
-      }
-    }
-  }
-  return false;
-};
-
-const isPastParticiple = (plainWord: string): boolean => {
-  return (
-    plainWord.endsWith("ado") ||
-    plainWord.endsWith("ido") ||
-    IRREGULAR_PARTICIPLES.has(plainWord)
-  );
-};
-
-const isGerund = (plainWord: string): boolean => {
-  return (
-    plainWord.endsWith("ando") ||
-    plainWord.endsWith("iendo") ||
-    plainWord.endsWith("yendo")
-  );
-};
+  const isGerund = (plainWord: string): boolean => {
+    return (
+      plainWord.endsWith("ando") ||
+      plainWord.endsWith("iendo") ||
+      plainWord.endsWith("yendo")
+    );
+  };
 
   const speakPhrase = () => {
     if (!speechSupported) return;
@@ -432,12 +432,12 @@ const isGerund = (plainWord: string): boolean => {
     // Falls back to heuristics if verbs array is not available (backward compatibility)
     const isVerb = (token: typeof tokens[0], index: number): boolean => {
       if (!token.isWord) return false;
-      
+
       // If we have AI-identified verbs, use those (most accurate)
       if (verbs.length > 0) {
         return normalizedVerbs.has(token.plain);
       }
-      
+
       // Fallback to heuristics for backward compatibility with old phrases
       const findPrevWordIndex = (start: number): number => {
         for (let i = start; i >= 0; i--) {
@@ -454,12 +454,12 @@ const isGerund = (plainWord: string): boolean => {
       };
 
       const plain = token.plain;
-      
+
       // Check reflexive patterns
       if (isReflexiveInfinitive(plain) || hasAttachedReflexivePronoun(plain)) {
         return true;
       }
-      
+
       const prevIndex = findPrevWordIndex(index - 1);
       if (
         prevIndex !== -1 &&
@@ -479,7 +479,7 @@ const isGerund = (plainWord: string): boolean => {
           return true;
         }
       }
-      
+
       // Base heuristic check
       if (hasRedFlagSuffix(plain)) return false;
       return baseVerbHeuristic(plain, tokens, index);
@@ -538,9 +538,8 @@ const isGerund = (plainWord: string): boolean => {
 
   return (
     <div
-      className={`group relative flex items-center gap-2 sm:gap-3 p-2 sm:p-3 md:p-4 bg-white/30 border border-white/40 rounded-xl backdrop-blur-md hover:bg-white/40 transition-all duration-300 shadow-lg ${
-        used ? "opacity-60" : ""
-      }`}
+      className={`group relative flex items-center gap-2 sm:gap-3 p-2 sm:p-3 md:p-4 bg-white/30 border border-white/40 rounded-xl backdrop-blur-md hover:bg-white/40 transition-all duration-300 shadow-lg ${used ? "opacity-60" : ""
+        }`}
     >
       <div className="flex-shrink-0">
         <Checkbox
@@ -592,15 +591,15 @@ const isGerund = (plainWord: string): boolean => {
           >
             {difficulty}
           </Badge>
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-6 w-6 sm:h-7 sm:w-7 md:h-8 md:w-8 p-0 opacity-80 hover:opacity-100 transition-opacity text-white hover:bg-white/20 hover:text-white flex-shrink-0"
-                onClick={() => onOpenAlternatives({ spanish, english, alternatives })}
-                title="View alternatives"
-              >
-                <Sparkles className="h-3 w-3 sm:h-3.5 sm:w-3.5 md:h-4 md:w-4 drop-shadow-md" />
-              </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-6 w-6 sm:h-7 sm:w-7 md:h-8 md:w-8 p-0 opacity-80 hover:opacity-100 transition-opacity text-white hover:bg-white/20 hover:text-white flex-shrink-0"
+            onClick={() => onOpenAlternatives({ spanish, english, alternatives })}
+            title="View alternatives"
+          >
+            <Sparkles className="h-3 w-3 sm:h-3.5 sm:w-3.5 md:h-4 md:w-4 drop-shadow-md" />
+          </Button>
         </div>
       </div>
     </div>
