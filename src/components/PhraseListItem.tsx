@@ -24,6 +24,7 @@ export function PhraseListItem({
   used,
   formalWords = {},
   alternatives = [],
+  verbs = [],
   onToggleUsed,
   onOpenAlternatives,
 }: PhraseListItemProps) {
@@ -229,8 +230,109 @@ const VERB_ENDINGS = [
 const stripDiacritics = (value: string) =>
   value.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
 
-const baseVerbHeuristic = (plainWord: string): boolean => {
+// Blacklist of common non-verb words that match verb patterns
+const NON_VERB_WORDS = new Set([
+  // Articles & Pronouns
+  "mas", "más", "las", "los", "que", "quien", "quienes", "cual", "cuales", 
+  "cuando", "donde", "cuanto", "cuanta", "cuantos", "cuantas",
+  
+  // Prepositions/Conjunctions (excluding "para" and "como" which can be verbs)
+  "por", "pero", "hasta", "desde", "sobre", "bajo", "entre", 
+  "contra", "sin", "con", "hacia", "según", "durante", "mediante",
+  
+  // Demonstratives (excluding "está" which is a verb)
+  "esta", "este", "estos", "estas", "eso", "esa", "esos", "esas",
+  "aquel", "aquella", "aquellos", "aquellas",
+  
+  // Common nouns (plural)
+  "ingredientes", "ingrediente", "personas", "persona", "cosas", "cosa",
+  "casas", "casa", "mesas", "mesa", "manos", "mano", "ojos", "ojo",
+  "pies", "pie", "cabezas", "cabeza", "platos", "plato", "bebidas", "bebida",
+  "comidas", "comida", "ciudades", "ciudad", "países", "país", 
+  "amigos", "amigo", "amigas", "amiga",
+  
+  // Time/Date words
+  "tiempo", "tiempos", "lugar", "lugares", "manera", "maneras",
+  "dia", "día", "dias", "días", "año", "años", "mes", "meses",
+  "vez", "veces", "hora", "horas", "minuto", "minutos", "segundo", "segundos",
+  "semana", "semanas", "hoy", "ayer", "mañana", "tarde", "noche",
+  
+  // Adjectives
+  "bueno", "buena", "buenos", "buenas", "malo", "mala", "malos", "malas",
+  "grande", "grandes", "pequeño", "pequeña", "pequeños", "pequeñas",
+  "rojo", "roja", "rojos", "rojas", "azul", "azules", "verde", "verdes",
+  "blanco", "blanca", "blancos", "blancas", "negro", "negra", "negros", "negras",
+  
+  // Adverbs/Modifiers
+  "menos", "muy", "tan", "tanto", "tanta", "tantos", "tantas",
+  "siempre", "nunca", "ahora", "después", "antes",
+  
+  // Other common words
+  "gente", "parte", "partes", "forma", "formas", "modo", "modos"
+]);
+
+// Check if an ambiguous word is likely a verb based on context
+const isAmbiguousWordAVerb = (
+  plainWord: string,
+  tokens: Array<{ plain: string; isWord: boolean }>,
+  index: number
+): boolean => {
+  const nextIndex = index + 1;
+  const nextToken = tokens[nextIndex];
+
+  // "para" - if followed by noun/article/infinitive, likely preposition (not verb)
+  if (plainWord === "para") {
+    if (nextToken?.isWord) {
+      const nextPlain = nextToken.plain;
+      // If followed by article (el, la, los, las, un, una) or infinitive ending, it's a preposition
+      if (
+        ["el", "la", "los", "las", "un", "una", "uno"].includes(nextPlain) ||
+        (nextPlain.length >= 4 && (nextPlain.endsWith("ar") || nextPlain.endsWith("er") || nextPlain.endsWith("ir")))
+      ) {
+        return false; // It's a preposition, not a verb
+      }
+    }
+    // Otherwise, could be a verb - let it through
+    return true;
+  }
+
+  // "como" - if followed by noun/adjective/article, likely adverb (not verb)
+  if (plainWord === "como") {
+    if (nextToken?.isWord) {
+      const nextPlain = nextToken.plain;
+      // If followed by article, pronoun, or longer word (likely noun/adjective), it's an adverb
+      if (
+        ["el", "la", "los", "las", "un", "una", "tú", "él", "ella", "usted", "nosotros", "nosotras", "vosotros", "vosotras", "ellos", "ellas", "ustedes"].includes(nextPlain) ||
+        nextPlain.length > 3 // Common nouns/adjectives are usually longer
+      ) {
+        return false; // It's an adverb, not a verb
+      }
+    }
+    // Otherwise, could be a verb - let it through
+    return true;
+  }
+
+  // Default: not an ambiguous word we're checking
+  return true;
+};
+
+const baseVerbHeuristic = (
+  plainWord: string,
+  tokens?: Array<{ plain: string; isWord: boolean }>,
+  index?: number
+): boolean => {
   if (!plainWord || plainWord.length < 3) return false;
+  
+  // Check blacklist first
+  if (NON_VERB_WORDS.has(plainWord)) return false;
+  
+  // Check ambiguous words with context
+  if (tokens && index !== undefined && (plainWord === "para" || plainWord === "como")) {
+    if (!isAmbiguousWordAVerb(plainWord, tokens, index)) {
+      return false;
+    }
+  }
+  
   if (
     plainWord.length >= 4 &&
     (plainWord.endsWith("ar") || plainWord.endsWith("er") || plainWord.endsWith("ir"))
@@ -321,56 +423,66 @@ const isGerund = (plainWord: string): boolean => {
       };
     });
 
-    const findPrevWordIndex = (start: number): number => {
-      for (let i = start; i >= 0; i--) {
-        if (tokens[i]?.isWord) return i;
+    // Normalize verbs array for comparison (handle diacritics and case)
+    const normalizedVerbs = new Set(
+      verbs.map((v) => stripDiacritics(v.toLowerCase().replace(/[.,!?;:¿¡]/g, "")))
+    );
+
+    // Check if a word is a verb using the AI-identified verbs array
+    // Falls back to heuristics if verbs array is not available (backward compatibility)
+    const isVerb = (token: typeof tokens[0], index: number): boolean => {
+      if (!token.isWord) return false;
+      
+      // If we have AI-identified verbs, use those (most accurate)
+      if (verbs.length > 0) {
+        return normalizedVerbs.has(token.plain);
       }
-      return -1;
-    };
-
-    const findNextWordIndex = (start: number): number => {
-      for (let i = start; i < tokens.length; i++) {
-        if (tokens[i]?.isWord) return i;
-      }
-      return -1;
-    };
-
-    const strongVerbIndices = new Set<number>();
-
-    tokens.forEach((token, index) => {
-      if (!token.isWord) return;
-      const plain = token.plain;
-
-      if (isReflexiveInfinitive(plain) || hasAttachedReflexivePronoun(plain)) {
-        strongVerbIndices.add(index);
-      } else {
-        const prevIndex = findPrevWordIndex(index - 1);
-        if (
-          prevIndex !== -1 &&
-          REFLEXIVE_PRONOUNS.has(tokens[prevIndex].plain) &&
-          baseVerbHeuristic(plain)
-        ) {
-          strongVerbIndices.add(index);
+      
+      // Fallback to heuristics for backward compatibility with old phrases
+      const findPrevWordIndex = (start: number): number => {
+        for (let i = start; i >= 0; i--) {
+          if (tokens[i]?.isWord) return i;
         }
+        return -1;
+      };
+
+      const findNextWordIndex = (start: number): number => {
+        for (let i = start; i < tokens.length; i++) {
+          if (tokens[i]?.isWord) return i;
+        }
+        return -1;
+      };
+
+      const plain = token.plain;
+      
+      // Check reflexive patterns
+      if (isReflexiveInfinitive(plain) || hasAttachedReflexivePronoun(plain)) {
+        return true;
+      }
+      
+      const prevIndex = findPrevWordIndex(index - 1);
+      if (
+        prevIndex !== -1 &&
+        REFLEXIVE_PRONOUNS.has(tokens[prevIndex].plain) &&
+        baseVerbHeuristic(plain, tokens, index)
+      ) {
+        return true;
       }
 
       const nextIndex = findNextWordIndex(index + 1);
       if (nextIndex !== -1) {
         const nextPlain = tokens[nextIndex].plain;
         if (HABER_FORMS.has(plain) && isPastParticiple(nextPlain)) {
-          strongVerbIndices.add(nextIndex);
+          return true;
         }
         if (ESTAR_FORMS.has(plain) && isGerund(nextPlain)) {
-          strongVerbIndices.add(nextIndex);
+          return true;
         }
       }
-    });
-
-    const isLikelyVerb = (plainWord: string, index: number): boolean => {
-      if (!plainWord) return false;
-      if (strongVerbIndices.has(index)) return true;
-      if (hasRedFlagSuffix(plainWord)) return false;
-      return baseVerbHeuristic(plainWord);
+      
+      // Base heuristic check
+      if (hasRedFlagSuffix(plain)) return false;
+      return baseVerbHeuristic(plain, tokens, index);
     };
 
     return (
@@ -407,10 +519,10 @@ const isGerund = (plainWord: string): boolean => {
             }
 
             // Check if it's a verb
-            if (isLikelyVerb(token.plain, index)) {
+            if (isVerb(token, index)) {
               return (
                 <VerbConjugation key={index} verb={wordOnly}>
-                  <span className="text-black font-semibold underline decoration-white decoration-2 decoration-dotted cursor-help">
+                  <span className="text-black font-semibold bg-white/50 px-0.5 py-0 rounded cursor-help inline-block leading-none">
                     {word}
                   </span>
                 </VerbConjugation>
@@ -426,7 +538,7 @@ const isGerund = (plainWord: string): boolean => {
 
   return (
     <div
-      className={`group relative flex items-center gap-2 sm:gap-3 p-2 sm:p-3 md:p-4 bg-white/20 border border-white/30 rounded-xl backdrop-blur-md hover:bg-white/30 transition-all duration-300 shadow-lg ${
+      className={`group relative flex items-center gap-2 sm:gap-3 p-2 sm:p-3 md:p-4 bg-white/30 border border-white/40 rounded-xl backdrop-blur-md hover:bg-white/40 transition-all duration-300 shadow-lg ${
         used ? "opacity-60" : ""
       }`}
     >

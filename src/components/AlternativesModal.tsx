@@ -57,7 +57,16 @@ export function AlternativesModal({
                     className="p-4 border border-white/30 rounded-xl bg-white/10 hover:bg-white/15 transition-colors backdrop-blur-sm shadow-lg"
                   >
                     <div className="flex items-start justify-between gap-3 mb-2">
-                      <p className="font-semibold text-white font-serif text-lg flex-1">{alt.text}</p>
+                      <div className="flex-1">
+                        <p className="font-semibold text-white font-serif text-lg">
+                          {alt.text}
+                        </p>
+                        {alt.english && (
+                          <p className="text-sm text-white/75">
+                            {alt.english}
+                          </p>
+                        )}
+                      </div>
                       <Badge
                         variant="outline"
                         className="text-xs whitespace-nowrap bg-white/20 text-white border-white/40 flex-shrink-0"

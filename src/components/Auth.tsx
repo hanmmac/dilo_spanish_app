@@ -56,104 +56,178 @@ export function Auth({ onAuthSuccess }: AuthProps) {
   };
 
   return (
-    <div className="min-h-screen relative overflow-hidden flex items-center justify-center">
-      {/* Full-screen background image */}
+    <div className="min-h-screen relative overflow-hidden flex items-center justify-center bg-slate-950">
       <div className="fixed inset-0 z-0">
-        <div className="absolute inset-0 bg-gradient-to-br from-purple-600/40 via-blue-600/40 to-purple-800/40" />
-        <div className="absolute inset-0 bg-black/40" />
+        <div className="absolute inset-0 bg-slate-950" />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_25%_20%,_rgba(255,255,255,0.12),_transparent_55%)]" />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_80%_0%,_rgba(120,180,255,0.08),_transparent_50%)]" />
       </div>
 
-      {/* Content */}
-      <div className="relative z-10 w-full max-w-md px-4">
-        <div className="glass rounded-3xl p-8 sm:p-10 space-y-6">
-          {/* Header */}
-          <div className="space-y-2 text-center">
-            <h1 className="text-4xl sm:text-5xl font-bold text-white font-serif text-shadow-strong">
-              Dilo
-            </h1>
-            <p className="text-white/80 text-sm text-shadow-subtle">
-              Say it
-            </p>
-          </div>
+      <div className="relative z-10 w-full max-w-5xl px-4 py-10">
+        <div className="rounded-[32px] border border-white/10 bg-white/[0.03] shadow-[0_40px_120px_rgba(0,0,0,0.45)] overflow-hidden backdrop-blur-3xl">
+          <div className="grid grid-cols-1 md:grid-cols-2">
+            {/* Left brand panel */}
+            <div className="relative p-10 sm:p-12 flex flex-col gap-8 bg-gradient-to-b from-white via-white to-slate-50 text-slate-900">
+              <div>
+                <p className="uppercase tracking-[0.4em] text-xs font-semibold text-slate-600">
+                  Daily Spanish Ritual
+                </p>
+                <h1 className="mt-4 text-4xl sm:text-5xl font-serif font-bold leading-tight">
+                  Dilo
+                </h1>
+                <p className="mt-3 text-base text-slate-700">
+                  Swap rote drills for one meaningful phrase a day.
+                  Learn the nuance, see regions, and actually use it IRL.
+                </p>
+              </div>
 
-          {/* Form */}
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="email" className="text-white/90 text-shadow-subtle">
-                Email
-              </Label>
-              <Input
-                id="email"
-                type="email"
-                placeholder="you@example.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-                className="bg-white/20 border-white/30 text-white placeholder:text-white/50 backdrop-blur-md h-11"
-                disabled={loading}
-              />
+              <div className="space-y-5">
+                <div className="flex items-center gap-3">
+                  <span className="w-10 h-10 rounded-full bg-slate-900/10 flex items-center justify-center font-semibold text-slate-900">
+                    01
+                  </span>
+                  <div>
+                    <p className="font-semibold text-slate-900">Curated Phrases</p>
+                    <p className="text-sm text-slate-600">
+                      Ten region-specific lines with formality context.
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3">
+                  <span className="w-10 h-10 rounded-full bg-slate-900/10 flex items-center justify-center font-semibold">
+                    02
+                  </span>
+                  <div>
+                    <p className="font-semibold text-slate-900">One Tap Review</p>
+                    <p className="text-sm text-slate-600">
+                      Mark phrases you&apos;ve used and revisit alternatives.
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3">
+                  <span className="w-10 h-10 rounded-full bg-slate-900/10 flex items-center justify-center font-semibold">
+                    03
+                  </span>
+                  <div>
+                    <p className="font-semibold text-slate-900">Speech Ready</p>
+                    <p className="text-sm text-slate-600">
+                      Built-in pronunciation & formal/informal swaps.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="pt-6 border-t border-slate-200/70 flex flex-wrap items-center gap-6 text-sm text-slate-600">
+                <div>
+                  <p className="text-xs uppercase tracking-wide text-slate-500">
+                    New phrases every
+                  </p>
+                  <p className="text-lg font-semibold text-slate-900">morning at 7am</p>
+                </div>
+                <div>
+                  <p className="text-xs uppercase tracking-wide text-slate-500">
+                    In beta for
+                  </p>
+                  <p className="text-lg font-semibold text-slate-900">Costa Rica</p>
+                </div>
+              </div>
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="password" className="text-white/90 text-shadow-subtle">
-                Password
-              </Label>
-              <Input
-                id="password"
-                type="password"
-                placeholder="••••••••"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-                minLength={6}
-                className="bg-white/20 border-white/30 text-white placeholder:text-white/50 backdrop-blur-md h-11"
-                disabled={loading}
-              />
+            {/* Right form panel */}
+            <div className="p-8 sm:p-10 bg-slate-950/85 text-white flex flex-col justify-center">
+              <div className="space-y-8">
+                <div className="space-y-1">
+                  <p className="text-xs uppercase tracking-[0.4em] text-white/60">
+                    {isSignUp ? "Create account" : "Welcome back"}
+                  </p>
+                  <h2 className="text-3xl font-semibold text-white">
+                    {isSignUp ? "Join the daily ritual" : "Sign in to continue"}
+                  </h2>
+                  <p className="text-sm text-white/70">
+                    {isSignUp
+                      ? "We’ll send you a confirmation email. No spam, promise."
+                      : "Enter your account credentials to load today’s phrases."}
+                  </p>
+                </div>
+
+                <form onSubmit={handleSubmit} className="space-y-5">
+                  <div className="space-y-2">
+                    <Label htmlFor="email" className="text-white/90">
+                      Email
+                    </Label>
+                    <Input
+                      id="email"
+                      type="email"
+                      placeholder="you@example.com"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      required
+                      className="bg-white/5 border-white/20 text-white placeholder:text-white/50 h-11 focus:bg-white/10"
+                      disabled={loading}
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="password" className="text-white/90">
+                      Password
+                    </Label>
+                    <Input
+                      id="password"
+                      type="password"
+                      placeholder="••••••••"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      required
+                      minLength={6}
+                      className="bg-white/5 border-white/20 text-white placeholder:text-white/50 h-11 focus:bg-white/10"
+                      disabled={loading}
+                    />
+                  </div>
+
+                  {error && (
+                    <div className="p-3 bg-red-500/10 border border-red-500/40 rounded-lg">
+                      <p className="text-red-200 text-sm">{error}</p>
+                    </div>
+                  )}
+
+                  {message && (
+                    <div className="p-3 bg-emerald-500/10 border border-emerald-500/40 rounded-lg">
+                      <p className="text-emerald-200 text-sm">{message}</p>
+                    </div>
+                  )}
+
+                  <Button
+                    type="submit"
+                    disabled={loading}
+                    className="w-full h-11 bg-white text-slate-900 font-semibold hover:bg-slate-100 focus-visible:ring-2 focus-visible:ring-white/70"
+                  >
+                    {loading ? (
+                      <>
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                        {isSignUp ? "Signing up..." : "Signing in..."}
+                      </>
+                    ) : (
+                      <>{isSignUp ? "Create account" : "Sign in"}</>
+                    )}
+                  </Button>
+                </form>
+
+                <div className="text-center text-sm text-white/70">
+                  <span>{isSignUp ? "Already registered?" : "Need an account?"}</span>{" "}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsSignUp(!isSignUp);
+                      setError(null);
+                      setMessage(null);
+                    }}
+                    className="text-white font-semibold hover:underline focus:outline-none"
+                  >
+                    {isSignUp ? "Sign in instead" : "Create one"}
+                  </button>
+                </div>
+              </div>
             </div>
-
-            {error && (
-              <div className="p-3 bg-red-500/20 border border-red-500/50 rounded-lg">
-                <p className="text-red-200 text-sm text-shadow">{error}</p>
-              </div>
-            )}
-
-            {message && (
-              <div className="p-3 bg-green-500/20 border border-green-500/50 rounded-lg">
-                <p className="text-green-200 text-sm text-shadow">{message}</p>
-              </div>
-            )}
-
-            <Button
-              type="submit"
-              disabled={loading}
-              className="w-full bg-white/20 hover:bg-white/30 text-white border border-white/30 backdrop-blur-md h-11 font-semibold"
-            >
-              {loading ? (
-                <>
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                  {isSignUp ? "Signing up..." : "Signing in..."}
-                </>
-              ) : (
-                isSignUp ? "Sign Up" : "Sign In"
-              )}
-            </Button>
-          </form>
-
-          {/* Toggle between sign in and sign up */}
-          <div className="text-center pt-4 border-t border-white/20">
-            <button
-              type="button"
-              onClick={() => {
-                setIsSignUp(!isSignUp);
-                setError(null);
-                setMessage(null);
-              }}
-              className="text-white/80 hover:text-white text-sm transition-colors text-shadow-subtle"
-            >
-              {isSignUp
-                ? "Already have an account? Sign in"
-                : "Don't have an account? Sign up"}
-            </button>
           </div>
         </div>
       </div>

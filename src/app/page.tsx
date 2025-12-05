@@ -69,7 +69,7 @@ const REGION_DISPLAY_NAMES: Record<string, string> = {
   argentina: "Argentina",
   colombia: "Colombia",
   caribbean: "Caribbean",
-  "costa-rica": "Costa Rica",
+  "costa-rica": "Latin America - Costa Rica alternatives",
 };
 
 // Helper to get auth token for API requests
@@ -94,6 +94,7 @@ export default function Home() {
   const [region, setRegion] = useState("costa-rica");
   const [formalOnly, setFormalOnly] = useState(false);
   const [isSwitchingFormality, setIsSwitchingFormality] = useState(false);
+  const [regenerateKey, setRegenerateKey] = useState(0);
 
   const completedCount = phrases.filter((p) => p.used).length;
 
@@ -120,22 +121,30 @@ export default function Home() {
     if (!user) return; // Don't load phrases if not authenticated
 
     const loadPhrases = async () => {
-      setLoading(true);
       setError(null);
       
       try {
         const formality = formalOnly ? "formal" : "neutral";
         const today = getTodayKey(); // Use user's local timezone
         
+        // If regenerating, skip cache and force new generation
+        const isRegenerating = regenerateKey > 0;
+        
         // FIRST: Check if we already have this exact combination stored (instant, free)
-        const stored = await getStoredPhrases(region, formality);
-        if (stored && stored.date === today) {
-          // We have it! Use it instantly (no API call, no loading)
-          setPhrases(stored.phrases);
-          setLoading(false);
-          setIsSwitchingFormality(false);
-          return;
+        // Skip this check if we're regenerating
+        if (!isRegenerating) {
+          const stored = await getStoredPhrases(region, formality);
+          if (stored && stored.date === today) {
+            // We have it! Use it instantly (no API call, no loading)
+            setPhrases(stored.phrases);
+            setLoading(false);
+            setIsSwitchingFormality(false);
+            return;
+          }
         }
+        
+        // Only show loading state when we actually need to call OpenAI/translate
+        setLoading(true);
         
         // SECOND: If we don't have this formality, but we have English phrases base, translate
         // This makes 1 API call only the first time we switch to a new formality
@@ -182,6 +191,10 @@ export default function Home() {
           setPhrases(translatedPhrases);
           setLoading(false);
           setIsSwitchingFormality(false);
+          // Reset regenerateKey after regeneration completes
+          if (regenerateKey > 0) {
+            setRegenerateKey(0);
+          }
           return;
         }
         
@@ -231,11 +244,15 @@ export default function Home() {
         setError(err instanceof Error ? err.message : "Failed to load phrases");
       } finally {
         setLoading(false);
+        // Reset regenerateKey after regeneration completes
+        if (regenerateKey > 0) {
+          setRegenerateKey(0);
+        }
       }
     };
 
     loadPhrases();
-  }, [user, region, formalOnly]);
+  }, [user, region, formalOnly, regenerateKey]);
 
   // Get region-specific background image
   const todayImage = useMemo(() => {
@@ -314,7 +331,7 @@ export default function Home() {
       <div className="relative z-10 min-h-screen">
         <main className="max-w-4xl mx-auto px-4 sm:px-6 py-8 pb-24">
             {/* Main glass container */}
-            <div className="glass rounded-3xl p-6 sm:p-8 space-y-6">
+            <div className="glass rounded-3xl p-6 sm:p-8 space-y-6 bg-white/40 border-white/30">
               {/* Header inside glass */}
               <div className="space-y-4">
                 <div className="space-y-2">
@@ -322,12 +339,12 @@ export default function Home() {
                     <h2 className="text-3xl sm:text-4xl font-bold text-white font-serif text-shadow-strong">
                       Dilo
                     </h2>
-                    <span className="text-white/80 text-sm text-shadow-subtle">
+                    <span className="text-white text-sm text-shadow-subtle">
                       Say it
                     </span>
                   </div>
-                  <p className="text-white/80 text-sm text-shadow-subtle">
-                    incorporate each spanish phrase today and check off when you got it
+                  <p className="text-white text-sm text-shadow-subtle">
+                    Incorporate each spanish phrase today and check off when you master it
                   </p>
                 </div>
 
@@ -346,7 +363,7 @@ export default function Home() {
                         {/* <SelectItem value="argentina" className="text-white">Argentina</SelectItem> */}
                         {/* <SelectItem value="colombia" className="text-white">Colombia</SelectItem> */}
                         {/* <SelectItem value="caribbean" className="text-white">Caribbean</SelectItem> */}
-                        <SelectItem value="costa-rica" className="text-white">Costa Rica</SelectItem>
+                        <SelectItem value="costa-rica" className="text-white">Latin America - Costa Rica alternatives</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
@@ -359,6 +376,15 @@ export default function Home() {
                       checked={formalOnly}
                       onCheckedChange={setFormalOnly}
                     />
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="ml-2 text-white border border-white/30 bg-white/10 hover:bg-white/20"
+                      onClick={() => setRegenerateKey((prev) => prev + 1)}
+                      disabled={loading}
+                    >
+                      {loading ? "Regenerating..." : "Regenerate"}
+                    </Button>
                   </div>
                 </div>
               </div>
@@ -406,7 +432,7 @@ export default function Home() {
               )}
 
               {/* Completion message */}
-              {completedCount === phrases.length && (
+              {phrases.length > 0 && !loading && completedCount === phrases.length && (
                 <div className="mt-6 glass-dark rounded-2xl p-6 text-center animate-in fade-in duration-500">
                   <h3 className="text-2xl font-bold text-white font-serif mb-2 text-shadow-strong">
                     ¡Muy bien!
@@ -418,8 +444,8 @@ export default function Home() {
               )}
 
               {/* Next pack card */}
-              {completedCount < phrases.length && (
-                <div className="mt-6 glass rounded-2xl p-6 text-center">
+              {!loading && phrases.length > 0 && completedCount < phrases.length && (
+                <div className="mt-6 glass-dark rounded-2xl p-6 text-center">
                   <p className="text-white text-sm text-shadow">
                     🔒 Next pack unlocks tomorrow at midnight
                   </p>

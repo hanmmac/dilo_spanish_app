@@ -17,6 +17,23 @@ const DIFFICULTY_DESCRIPTIONS = {
   Hard: "Advanced verbs (conseguir, lograr, alcanzar, suponer) and sophisticated vocabulary. Complex grammar structures, uncommon idioms, and nuanced expressions.",
 };
 
+const normalizeAlternatives = (
+  alternatives: any
+): Array<{
+  text: string;
+  english?: string;
+  region: string;
+  formality: string;
+}> => {
+  if (!Array.isArray(alternatives)) return [];
+  return alternatives.map((alt) => ({
+    text: alt?.text || alt?.Text || "",
+    english: alt?.english || alt?.English || "",
+    region: alt?.region || alt?.Region || "",
+    formality: alt?.formality || alt?.Formality || "",
+  }));
+};
+
 export async function generatePhrases(
   params: PhraseGenerationParams
 ): Promise<Phrase[]> {
@@ -51,6 +68,8 @@ export async function generatePhrases(
 Requirements:
 - Region: ${regionDesc}
 - Formality: ${formalityDesc}
+- **CRITICAL: The main "spanish" phrase MUST be the MOST COMMON and WIDELY USED casual way of saying this in Latin American Spanish (not region-specific). Put region-specific variations and other common general variations in the "alternatives" array.**
+${region === "costa-rica" ? "- For Costa Rica region: The main phrase should use the most common casual Latin American Spanish that works across all Latin American countries. Costa Rica-specific expressions (like 'tuanis', 'mae', 'pura vida', or Costa Rica-specific verb choices) should go in the alternatives array. This way users learn the most widely understood Spanish first, with regional variations as alternatives." : ""}
 - Mix of difficulties: 3-4 Easy, 4-5 Medium, 2-3 Hard
 - Difficulty is based on VERB COMPLEXITY and VOCABULARY SOPHISTICATION, NOT sentence length:
   * Easy: Simple verbs (ser, estar, tener, hacer, ir, venir, ver, decir) and basic vocabulary
@@ -70,6 +89,7 @@ Requirements:
 - Ensure variety across all these topics while maintaining natural, conversational language
 - Use proper Spanish punctuation (¿? ¡!)
 - When formality is informal or neutral, include a "formalWords" object that maps informal words to their formal equivalents (e.g., {"tú": "usted", "te": "le", "tu": "su", "contigo": "con usted"})
+- **IMPORTANT: For each phrase, identify which words in the Spanish text are verbs. Include a "verbs" array containing the exact verb words as they appear in the phrase (e.g., if the phrase is "¿Cómo estás?", the verbs array should be ["estás"]). Only include actual verbs, not nouns, adjectives, or other parts of speech.**
 
 Return a JSON object with a "phrases" array in this exact format:
 {
@@ -79,9 +99,10 @@ Return a JSON object with a "phrases" array in this exact format:
       "english": "Good morning",
       "difficulty": "Easy",
       "formalWords": {},
+      "verbs": [],
       "alternatives": [
-        {"text": "Buen día", "region": "Argentina", "formality": "Neutral"},
-        {"text": "Hola", "region": "General", "formality": "Neutral"}
+        {"text": "Buen día", "english": "Good day", "region": "Argentina", "formality": "Neutral"},
+        {"text": "Hola", "english": "Hello", "region": "General", "formality": "Neutral"}
       ]
     },
     {
@@ -89,20 +110,19 @@ Return a JSON object with a "phrases" array in this exact format:
       "english": "How are you?",
       "difficulty": "Easy",
       "formalWords": {"estás": "está", "tú": "usted"},
+      "verbs": ["estás"],
       "alternatives": [
-        {"text": "¿Qué tal?", "region": "General", "formality": "Informal"},
-        {"text": "¿Cómo te va?", "region": "General", "formality": "Informal"}
+        {"text": "¿Qué tal?", "english": "How's it going?", "region": "General", "formality": "Informal"},
+        {"text": "¿Cómo te va?", "english": "How's it going for you?", "region": "General", "formality": "Informal"}
       ]
     },
     ...
   ]
 }
 
-For each phrase, include 2-4 alternatives that are different ways to express the same meaning. Alternatives should vary by:
-- Different vocabulary or phrasing
-- Different regions (show regional variations)
-- Different formality levels
-- Different idiomatic expressions
+For each phrase, include 2-4 alternatives that are different ways to express the same meaning. For every alternative include an English translation string. **IMPORTANT: All alternatives must use the same formality level as the main phrase** (if formality is "formal", all alternatives must be formal; if formality is "informal" or "neutral", all alternatives must be informal/neutral). Alternatives should include:
+- Costa Rica-specific variations (when region is Costa Rica)
+- Other general common variations from Latin America (different vocabulary, phrasing, or idiomatic expressions that are widely used but not the most common)
 
 IMPORTANT: When formality is "informal" or "neutral", ALWAYS use informal verb forms:
 - Use "estás" not "está" (¿Cómo estás? not ¿Cómo está?)
@@ -152,7 +172,8 @@ Do not include any other text, explanations, or markdown formatting. Only the JS
       difficulty: (p.difficulty || p.Difficulty || "Medium") as Difficulty,
       used: false,
       formalWords: p.formalWords || {},
-      alternatives: p.alternatives || [],
+      verbs: Array.isArray(p.verbs) ? p.verbs : [],
+      alternatives: normalizeAlternatives(p.alternatives),
     }));
 
     // Validate we got the right number
@@ -190,11 +211,17 @@ export async function translatePhrasesToRegion(
 
   const systemPrompt = `You are a Spanish language learning assistant. Translate the following English phrases to Spanish, adapting them for ${regionDesc} with ${formalityDesc}.
 
+**CRITICAL: The main "spanish" translation MUST be the MOST COMMON and WIDELY USED casual way of saying this in Latin American Spanish (not region-specific). Put region-specific variations and other common general variations in the "alternatives" array.**
+${targetRegion === "costa-rica" ? "For Costa Rica region: The main phrase should use the most common casual Latin American Spanish that works across all Latin American countries. Costa Rica-specific expressions should go in the alternatives array. This way users learn the most widely understood Spanish first, with regional variations as alternatives." : ""}
+
 For each English phrase, provide:
-1. A natural Spanish translation appropriate for the target region
+1. A natural Spanish translation using the most common casual Latin American Spanish
 2. The same difficulty level
 3. A "formalWords" object if using informal forms
-4. 2-4 alternatives that are different ways to express the same meaning in Spanish
+4. **A "verbs" array containing the exact verb words as they appear in the Spanish phrase (e.g., if the phrase is "¿Cómo estás?", the verbs array should be ["estás"]). Only include actual verbs, not nouns, adjectives, or other parts of speech.**
+5. 2-4 alternatives that are different ways to express the same meaning in Spanish, and include an English translation for each alternative. **IMPORTANT: All alternatives must use the same formality level as the main phrase** (if formality is "formal", all alternatives must be formal; if formality is "informal" or "neutral", all alternatives must be informal/neutral). Alternatives should include:
+   - Costa Rica-specific variations (when region is Costa Rica)
+   - Other general common variations from Latin America (different vocabulary, phrasing, or idiomatic expressions that are widely used but not the most common)
 
 Return a JSON object with a "phrases" array in this exact format:
 {
@@ -204,9 +231,10 @@ Return a JSON object with a "phrases" array in this exact format:
       "english": "Original English phrase",
       "difficulty": "Easy|Medium|Hard",
       "formalWords": {},
+      "verbs": ["verb1", "verb2"],
       "alternatives": [
-        {"text": "Alternative 1", "region": "Region name", "formality": "Formality level"},
-        {"text": "Alternative 2", "region": "Region name", "formality": "Formality level"}
+        {"text": "Alternative 1", "english": "English meaning", "region": "Region name", "formality": "Formality level"},
+        {"text": "Alternative 2", "english": "Another meaning", "region": "Region name", "formality": "Formality level"}
       ]
     }
   ]
@@ -250,7 +278,8 @@ Return a JSON object with a "phrases" array in this exact format:
         difficulty: original.difficulty,
         used: original.used,
         formalWords: translated.formalWords || {},
-        alternatives: translated.alternatives || [],
+        verbs: Array.isArray(translated.verbs) ? translated.verbs : [],
+        alternatives: normalizeAlternatives(translated.alternatives),
       };
     });
 

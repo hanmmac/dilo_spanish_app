@@ -2,6 +2,7 @@ export type Difficulty = "Easy" | "Medium" | "Hard";
 
 export interface PhraseAlternative {
   text: string;
+  english?: string;
   region: string;
   formality: string;
 }
@@ -14,6 +15,7 @@ export interface Phrase {
   used: boolean;
   formalWords?: Record<string, string>; // Maps informal words to formal equivalents
   alternatives?: PhraseAlternative[]; // Alternative ways to say the same phrase
+  verbs?: string[]; // Words in the Spanish phrase that are verbs (identified by AI during generation)
 }
 
 export interface PhraseGenerationParams {
