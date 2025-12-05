@@ -1,0 +1,51 @@
+name: Update Project Brain
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  update-brain:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Dilo Spanish App
+        uses: actions/checkout@v4
+
+      - name: Checkout Project Brain
+        uses: actions/checkout@v4
+        with:
+          repository: hanmmac/project-brain
+          path: project-brain
+          token: ${{ secrets.PROJECT_BRAIN_PAT }}
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          cd project-brain
+          pip install -r requirements.txt
+
+      - name: Run brain.py dashboard
+        run: |
+          cd project-brain
+          python brain.py dashboard
+
+      - name: Commit and push changes
+        run: |
+          cd project-brain
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          
+          # Check if there are changes in data/ or output/
+          # We use 'git status --porcelain' to check for changes in specific paths
+          if [[ -n $(git status --porcelain data output) ]]; then
+            git add data output
+            git commit -m "Auto-update from dilo_spanish_app CI"
+            git push
+          else
+            echo "No changes in data/ or output/ to commit."
+          fi
