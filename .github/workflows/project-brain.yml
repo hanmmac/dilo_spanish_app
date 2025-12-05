@@ -43,7 +43,7 @@ jobs:
           # Check if there are changes in data/ or output/
           # We use 'git status --porcelain' to check for changes in specific paths
           if [[ -n $(git status --porcelain data output) ]]; then
-            git add data output
+            git add -f data output
             git commit -m "Auto-update from dilo_spanish_app CI"
             git push
           else
