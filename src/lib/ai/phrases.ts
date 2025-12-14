@@ -86,6 +86,9 @@ ${region === "costa-rica" ? "- For Costa Rica region: The main phrase should use
   * Surf conditions: describing waves, weather for surfing, beach conditions
   * Food: describing dishes, cooking, asking about recipes, dietary preferences
   * Social interactions: making plans, asking about someone's day, casual conversations
+  * Travel: asking for directions, booking accommodations, transportation, tourist activities, travel plans
+  * Jobs & work: discussing work tasks, schedules, meetings, job-related conversations, workplace interactions
+  * Friends & family: talking about relationships, family members, friendships, personal connections, social bonds
 - Ensure variety across all these topics while maintaining natural, conversational language
 - Use proper Spanish punctuation (¿? ¡!)
 - When formality is informal or neutral, include a "formalWords" object that maps informal words to their formal equivalents (e.g., {"tú": "usted", "te": "le", "tu": "su", "contigo": "con usted"})
