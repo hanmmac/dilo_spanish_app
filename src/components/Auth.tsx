@@ -66,11 +66,11 @@ export function Auth({ onAuthSuccess }: AuthProps) {
   };
 
   return (
-    <div className="min-h-screen relative overflow-hidden flex items-center justify-center bg-slate-800">
+    <div className="min-h-screen relative overflow-hidden flex items-center justify-center bg-slate-200">
       <div className="fixed inset-0 z-0">
-        <div className="absolute inset-0 bg-slate-800" />
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_25%_20%,_rgba(255,255,255,0.15),_transparent_55%)]" />
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_80%_0%,_rgba(120,180,255,0.12),_transparent_50%)]" />
+        <div className="absolute inset-0 bg-slate-200" />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_25%_20%,_rgba(255,255,255,0.4),_transparent_55%)]" />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_80%_0%,_rgba(200,220,255,0.3),_transparent_50%)]" />
       </div>
 
       <div className="relative z-10 w-full max-w-5xl px-4 py-10">
