@@ -94,7 +94,6 @@ export default function Home() {
   const [region, setRegion] = useState("costa-rica");
   const [formalOnly, setFormalOnly] = useState(false);
   const [isSwitchingFormality, setIsSwitchingFormality] = useState(false);
-  const [regenerateKey, setRegenerateKey] = useState(0);
 
   const completedCount = phrases.filter((p) => p.used).length;
 
@@ -127,20 +126,14 @@ export default function Home() {
         const formality = formalOnly ? "formal" : "neutral";
         const today = getTodayKey(); // Use user's local timezone
         
-        // If regenerating, skip cache and force new generation
-        const isRegenerating = regenerateKey > 0;
-        
         // FIRST: Check if we already have this exact combination stored (instant, free)
-        // Skip this check if we're regenerating
-        if (!isRegenerating) {
-          const stored = await getStoredPhrases(region, formality);
-          if (stored && stored.date === today) {
-            // We have it! Use it instantly (no API call, no loading)
-            setPhrases(stored.phrases);
-            setLoading(false);
-            setIsSwitchingFormality(false);
-            return;
-          }
+        const stored = await getStoredPhrases(region, formality);
+        if (stored && stored.date === today) {
+          // We have it! Use it instantly (no API call, no loading)
+          setPhrases(stored.phrases);
+          setLoading(false);
+          setIsSwitchingFormality(false);
+          return;
         }
         
         // Only show loading state when we actually need to call OpenAI/translate
@@ -191,10 +184,6 @@ export default function Home() {
           setPhrases(translatedPhrases);
           setLoading(false);
           setIsSwitchingFormality(false);
-          // Reset regenerateKey after regeneration completes
-          if (regenerateKey > 0) {
-            setRegenerateKey(0);
-          }
           return;
         }
         
@@ -244,15 +233,11 @@ export default function Home() {
         setError(err instanceof Error ? err.message : "Failed to load phrases");
       } finally {
         setLoading(false);
-        // Reset regenerateKey after regeneration completes
-        if (regenerateKey > 0) {
-          setRegenerateKey(0);
-        }
       }
     };
 
     loadPhrases();
-  }, [user, region, formalOnly, regenerateKey]);
+  }, [user, region, formalOnly]);
 
   // Get region-specific background image
   const todayImage = useMemo(() => {
@@ -376,15 +361,6 @@ export default function Home() {
                       checked={formalOnly}
                       onCheckedChange={setFormalOnly}
                     />
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="ml-2 text-white border border-white/30 bg-white/10 hover:bg-white/20"
-                      onClick={() => setRegenerateKey((prev) => prev + 1)}
-                      disabled={loading}
-                    >
-                      {loading ? "Regenerating..." : "Regenerate"}
-                    </Button>
                   </div>
                 </div>
               </div>

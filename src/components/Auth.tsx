@@ -66,11 +66,11 @@ export function Auth({ onAuthSuccess }: AuthProps) {
   };
 
   return (
-    <div className="min-h-screen relative overflow-hidden flex items-center justify-center bg-slate-950">
+    <div className="min-h-screen relative overflow-hidden flex items-center justify-center bg-slate-800">
       <div className="fixed inset-0 z-0">
-        <div className="absolute inset-0 bg-slate-950" />
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_25%_20%,_rgba(255,255,255,0.12),_transparent_55%)]" />
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_80%_0%,_rgba(120,180,255,0.08),_transparent_50%)]" />
+        <div className="absolute inset-0 bg-slate-800" />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_25%_20%,_rgba(255,255,255,0.15),_transparent_55%)]" />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_80%_0%,_rgba(120,180,255,0.12),_transparent_50%)]" />
       </div>
 
       <div className="relative z-10 w-full max-w-5xl px-4 py-10">
@@ -86,8 +86,7 @@ export function Auth({ onAuthSuccess }: AuthProps) {
                   Dilo
                 </h1>
                 <p className="mt-3 text-base text-slate-700">
-                  Swap rote drills for one meaningful phrase a day.
-                  Learn the nuance, see regions, and actually use it IRL.
+                  Practice makes perfect. Fit each phrase into your day and focus on the words you don&apos;t know :)
                 </p>
               </div>
 
@@ -144,7 +143,7 @@ export function Auth({ onAuthSuccess }: AuthProps) {
             </div>
 
             {/* Right form panel */}
-            <div className="p-8 sm:p-10 bg-slate-950/85 text-white flex flex-col justify-center">
+            <div className="p-8 sm:p-10 bg-slate-900/90 text-white flex flex-col justify-center">
               <div className="space-y-8">
                 <div className="space-y-1">
                   <p className="text-xs uppercase tracking-[0.4em] text-white/60">
