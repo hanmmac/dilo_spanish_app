@@ -13,17 +13,27 @@ interface AuthProps {
 
 export function Auth({ onAuthSuccess }: AuthProps) {
   const [isSignUp, setIsSignUp] = useState(false);
+  const [sitePassword, setSitePassword] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
 
+  const SITE_PASSWORD = "ilovebmo";
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError(null);
     setMessage(null);
+
+    // Validate site password first
+    if (sitePassword !== SITE_PASSWORD) {
+      setError("Incorrect site password. Please contact the site administrator.");
+      setLoading(false);
+      return;
+    }
 
     try {
       if (isSignUp) {
@@ -152,6 +162,22 @@ export function Auth({ onAuthSuccess }: AuthProps) {
 
                 <form onSubmit={handleSubmit} className="space-y-5">
                   <div className="space-y-2">
+                    <Label htmlFor="site-password" className="text-white/90">
+                      Site Password
+                    </Label>
+                    <Input
+                      id="site-password"
+                      type="password"
+                      placeholder="Enter site password"
+                      value={sitePassword}
+                      onChange={(e) => setSitePassword(e.target.value)}
+                      required
+                      className="bg-white/5 border-white/20 text-white placeholder:text-white/50 h-11 focus:bg-white/10"
+                      disabled={loading}
+                    />
+                  </div>
+
+                  <div className="space-y-2">
                     <Label htmlFor="email" className="text-white/90">
                       Email
                     </Label>
@@ -220,6 +246,7 @@ export function Auth({ onAuthSuccess }: AuthProps) {
                       setIsSignUp(!isSignUp);
                       setError(null);
                       setMessage(null);
+                      setSitePassword(""); // Clear site password when switching
                     }}
                     className="text-white font-semibold hover:underline focus:outline-none"
                   >

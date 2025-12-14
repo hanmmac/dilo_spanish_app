@@ -6,6 +6,39 @@ const RATE_LIMIT_REQUESTS = 100;
 
 export async function GET(request: NextRequest) {
   try {
+    // Extract auth token from request
+    const authHeader = request.headers.get("authorization");
+    let authToken: string | undefined = authHeader?.startsWith("Bearer ") 
+      ? authHeader.substring(7) 
+      : undefined;
+
+    // If no token in header, try to get from cookies
+    if (!authToken) {
+      const cookieHeader = request.headers.get("cookie");
+      if (cookieHeader) {
+        const cookies: Record<string, string> = {};
+        cookieHeader.split(";").forEach(cookie => {
+          const [key, ...valueParts] = cookie.trim().split("=");
+          if (key && valueParts.length > 0) {
+            cookies[key] = decodeURIComponent(valueParts.join("="));
+          }
+        });
+
+        const authCookieKey = Object.keys(cookies).find(key => 
+          key.includes("sb-") && key.includes("-auth-token")
+        );
+
+        if (authCookieKey) {
+          try {
+            const sessionData = JSON.parse(cookies[authCookieKey]);
+            authToken = sessionData?.access_token;
+          } catch {
+            // Invalid cookie format, continue without token
+          }
+        }
+      }
+    }
+
     // Check authentication
     const user = await getAuthenticatedUser(request);
     if (!user) {
@@ -18,8 +51,8 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Check rate limit
-    const rateLimit = await checkRateLimit(user.id);
+    // Check rate limit (pass auth token)
+    const rateLimit = await checkRateLimit(user.id, authToken);
     if (!rateLimit.allowed) {
       return NextResponse.json(
         {
@@ -37,8 +70,8 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Log the API call (after auth and rate limit check pass)
-    await logApiCall(user.id, "/api/conjugate");
+    // Log the API call (after auth and rate limit check pass, pass auth token)
+    await logApiCall(user.id, "/api/conjugate", authToken);
 
     const searchParams = request.nextUrl.searchParams;
     const verb = searchParams.get("verb");

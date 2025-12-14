@@ -86,9 +86,17 @@ export async function getAuthenticatedUser(request: NextRequest): Promise<{ id: 
 const RATE_LIMIT_REQUESTS = 100;
 const RATE_LIMIT_WINDOW_HOURS = 24;
 
-export async function checkRateLimit(userId: string): Promise<{ allowed: boolean; remaining: number }> {
+export async function checkRateLimit(userId: string, authToken?: string): Promise<{ allowed: boolean; remaining: number }> {
   try {
-    const supabase = createClient(supabaseUrl, supabaseAnonKey);
+    const supabaseOptions: any = {};
+    if (authToken) {
+      supabaseOptions.global = {
+        headers: {
+          Authorization: `Bearer ${authToken}`,
+        },
+      };
+    }
+    const supabase = createClient(supabaseUrl, supabaseAnonKey, supabaseOptions);
     const cutoffTime = new Date(Date.now() - RATE_LIMIT_WINDOW_HOURS * 60 * 60 * 1000).toISOString();
 
     // Count recent API requests from the dedicated api_usage table
@@ -121,9 +129,17 @@ export async function checkRateLimit(userId: string): Promise<{ allowed: boolean
  * Log an API call to the api_usage table
  * This should be called after authentication and rate limit check pass
  */
-export async function logApiCall(userId: string, endpoint: string): Promise<void> {
+export async function logApiCall(userId: string, endpoint: string, authToken?: string): Promise<void> {
   try {
-    const supabase = createClient(supabaseUrl, supabaseAnonKey);
+    const supabaseOptions: any = {};
+    if (authToken) {
+      supabaseOptions.global = {
+        headers: {
+          Authorization: `Bearer ${authToken}`,
+        },
+      };
+    }
+    const supabase = createClient(supabaseUrl, supabaseAnonKey, supabaseOptions);
     
     const { error } = await supabase
       .from("api_usage")
