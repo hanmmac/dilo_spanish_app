@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { supabase } from "@/lib/supabase";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -19,8 +19,18 @@ export function Auth({ onAuthSuccess }: AuthProps) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
+  const passwordStartedTypingRef = useRef(false);
 
   const SITE_PASSWORD = "ilovebmo";
+
+  // Start pre-loading phrases when user starts typing password
+  const handlePasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setPassword(e.target.value);
+    if (!passwordStartedTypingRef.current && e.target.value.length > 0) {
+      passwordStartedTypingRef.current = true;
+      // Pre-warm: We can't actually call the API yet, but we'll trigger it immediately after auth succeeds
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -56,6 +66,36 @@ export function Auth({ onAuthSuccess }: AuthProps) {
 
         if (signInError) throw signInError;
 
+        // Start phrase generation immediately after auth succeeds (in parallel with onAuthSuccess)
+        // This way phrases start loading as soon as possible
+        const startPhraseGeneration = async () => {
+          try {
+            const { data: { session } } = await supabase.auth.getSession();
+            if (session?.access_token) {
+              // Get today's date key
+              const today = new Date().toISOString().split('T')[0];
+              // Use default region and formality (will be overridden by page.tsx with user's actual settings)
+              const region = "costa-rica";
+              const formality = "neutral";
+              
+              // Start the API call (fire and forget - page.tsx will handle the actual state)
+              fetch(
+                `/api/phrases?region=${region}&formality=${formality}&count=10&date=${today}`,
+                {
+                  credentials: "include",
+                  headers: { Authorization: `Bearer ${session.access_token}` },
+                }
+              ).catch(() => {
+                // Silently fail - page.tsx will handle the actual loading
+              });
+            }
+          } catch {
+            // Silently fail - page.tsx will handle the actual loading
+          }
+        };
+
+        // Start phrase generation in parallel with auth success callback
+        startPhraseGeneration();
         onAuthSuccess();
       }
     } catch (err) {
@@ -201,7 +241,7 @@ export function Auth({ onAuthSuccess }: AuthProps) {
                       type="password"
                       placeholder="••••••••"
                       value={password}
-                      onChange={(e) => setPassword(e.target.value)}
+                      onChange={handlePasswordChange}
                       required
                       minLength={6}
                       className="bg-white/5 border-white/20 text-white placeholder:text-white/50 h-11 focus:bg-white/10"

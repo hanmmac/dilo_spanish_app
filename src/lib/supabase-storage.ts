@@ -38,56 +38,159 @@ async function getUserId(): Promise<string | null> {
 }
 
 /**
- * Retrieve stored phrases from Supabase for a specific date, region, and formality
+ * Get shared phrases from daily_phrases table
  */
-export async function getStoredPhrases(region?: string, formality?: string): Promise<StoredPhrases | null> {
-  const userId = await getUserId();
-  if (!userId) return null;
-
-  const today = getTodayKey();
-
+async function getSharedPhrases(
+  date: string,
+  region: string,
+  formality: string
+): Promise<Phrase[] | null> {
   try {
-    let query = supabase
-      .from("user_phrases")
-      .select("phrases, date, region, formality")
-      .eq("user_id", userId)
-      .eq("date", today);
-
-    if (region) {
-      query = query.eq("region", region);
-    }
-    if (formality) {
-      query = query.eq("formality", formality);
-    }
-
-    const { data, error } = await query.single();
+    const { data, error } = await supabase
+      .from("daily_phrases")
+      .select("phrases")
+      .eq("date", date)
+      .eq("region", region)
+      .eq("formality", formality)
+      .single();
 
     if (error) {
       if (error.code === "PGRST116") {
         // No rows returned
         return null;
       }
-      console.error("Error fetching phrases:", error);
+      console.error("Error fetching shared phrases:", error);
       return null;
     }
 
-    if (data && data.date === today) {
-      return {
-        date: data.date,
-        phrases: data.phrases || [],
-        region: data.region,
-        formality: data.formality,
-        timestamp: Date.now(),
-        englishPhrases: data.phrases?.map((p: Phrase) => ({
-          english: p.english,
-          difficulty: p.difficulty,
-          id: p.id,
-          used: p.used,
-        })),
-      };
+    return data?.phrases || null;
+  } catch (error) {
+    console.error("Error in getSharedPhrases:", error);
+    return null;
+  }
+}
+
+/**
+ * Save shared phrases to daily_phrases table
+ */
+async function saveSharedPhrases(
+  phrases: Phrase[],
+  date: string,
+  region: string,
+  formality: string
+): Promise<void> {
+  try {
+    const { error } = await supabase
+      .from("daily_phrases")
+      .insert({
+        date,
+        region,
+        formality,
+        phrases,
+      })
+      .select()
+      .single();
+
+    if (error) {
+      // If it's a unique constraint violation, phrases already exist (race condition handled)
+      if (error.code === "23505") {
+        console.log("Phrases already exist for this date/region/formality");
+        return;
+      }
+      console.error("Error saving shared phrases:", error);
+      throw error;
+    }
+  } catch (error) {
+    console.error("Error in saveSharedPhrases:", error);
+    throw error;
+  }
+}
+
+/**
+ * Get user's completion status for phrases
+ */
+async function getUserCompletions(
+  date: string,
+  region: string,
+  formality: string
+): Promise<Record<number, boolean> | null> {
+  const userId = await getUserId();
+  if (!userId) return null;
+
+  try {
+    const { data, error } = await supabase
+      .from("user_phrases")
+      .select("phrases")
+      .eq("user_id", userId)
+      .eq("date", date)
+      .eq("region", region)
+      .eq("formality", formality)
+      .single();
+
+    if (error) {
+      if (error.code === "PGRST116") {
+        return null;
+      }
+      console.error("Error fetching user completions:", error);
+      return null;
+    }
+
+    if (data?.phrases && Array.isArray(data.phrases)) {
+      const completions: Record<number, boolean> = {};
+      data.phrases.forEach((p: Phrase) => {
+        completions[p.id] = p.used || false;
+      });
+      return completions;
     }
 
     return null;
+  } catch (error) {
+    console.error("Error in getUserCompletions:", error);
+    return null;
+  }
+}
+
+/**
+ * Retrieve stored phrases from Supabase for a specific date, region, and formality
+ * Now checks shared daily_phrases first, then merges with user completion status
+ */
+export async function getStoredPhrases(region?: string, formality?: string): Promise<StoredPhrases | null> {
+  const userId = await getUserId();
+  if (!userId) return null;
+
+  const today = getTodayKey();
+  const finalRegion = region || "costa-rica";
+  const finalFormality = formality || "neutral";
+
+  try {
+    // Get shared phrases
+    const sharedPhrases = await getSharedPhrases(today, finalRegion, finalFormality);
+    if (!sharedPhrases) {
+      return null;
+    }
+
+    // Get user's completion status
+    const completions = await getUserCompletions(today, finalRegion, finalFormality);
+
+    // Merge shared phrases with user completion status
+    const phrasesWithCompletions: Phrase[] = sharedPhrases.map((phrase: Phrase) => ({
+      ...phrase,
+      used: completions?.[phrase.id] ?? false,
+    }));
+
+    return {
+      date: today,
+      phrases: phrasesWithCompletions,
+      region: finalRegion,
+      formality: finalFormality,
+      timestamp: Date.now(),
+      englishPhrases: phrasesWithCompletions.map((p: Phrase) => ({
+        english: p.english,
+        difficulty: p.difficulty,
+        id: p.id,
+        used: p.used,
+      })),
+    };
   } catch (error) {
     console.error("Error in getStoredPhrases:", error);
     return null;
@@ -95,7 +198,8 @@ export async function getStoredPhrases(region?: string, formality?: string): Pro
 }
 
 /**
- * Save phrases to Supabase for today, keyed by region and formality
+ * Save phrases to Supabase
+ * Now saves to daily_phrases (shared) and user_phrases (completion status only)
  */
 export async function savePhrases(
   phrases: Phrase[],
@@ -110,32 +214,29 @@ export async function savePhrases(
 
   const today = getTodayKey();
 
-  // Extract English phrases as base for region switching
-  const englishPhrases = phrases.map(p => ({
-    english: p.english,
-    difficulty: p.difficulty,
-    id: p.id,
-    used: p.used,
-  }));
-
-  const data = {
-    user_id: userId,
-    date: today,
-    region,
-    formality,
-    phrases,
-  };
-
   try {
-    const { error } = await supabase
+    // Save to shared daily_phrases (if not already exists)
+    await saveSharedPhrases(phrases, today, region, formality);
+
+    // Save completion status to user_phrases
+    // Store phrases with completion status for this user
+    const userPhrasesData = {
+      user_id: userId,
+      date: today,
+      region,
+      formality,
+      phrases: phrases.map(p => ({ ...p, used: p.used || false })),
+    };
+
+    const { error: userError } = await supabase
       .from("user_phrases")
-      .upsert(data, {
+      .upsert(userPhrasesData, {
         onConflict: "user_id,date,region,formality",
       });
 
-    if (error) {
-      console.error("Error saving phrases to Supabase:", error);
-      throw error;
+    if (userError) {
+      console.error("Error saving user phrases:", userError);
+      throw userError;
     }
   } catch (error) {
     console.error("Error in savePhrases:", error);
@@ -144,19 +245,16 @@ export async function savePhrases(
 }
 
 /**
- * Get English phrases base from stored data (for region/formality switching)
+ * Get English phrases base from shared daily_phrases
  */
 export async function getEnglishPhrasesBase(): Promise<Array<{ english: string; difficulty: Difficulty; id: number; used: boolean }> | null> {
-  const userId = await getUserId();
-  if (!userId) return null;
-
   const today = getTodayKey();
 
   try {
+    // Get any region/formality combination for today to extract English phrases
     const { data, error } = await supabase
-      .from("user_phrases")
+      .from("daily_phrases")
       .select("phrases")
-      .eq("user_id", userId)
       .eq("date", today)
       .limit(1)
       .single();
@@ -174,7 +272,7 @@ export async function getEnglishPhrasesBase(): Promise<Array<{ english: string; 
         english: p.english,
         difficulty: p.difficulty,
         id: p.id,
-        used: p.used,
+        used: false, // Base phrases don't have completion status
       }));
     }
 
@@ -186,7 +284,7 @@ export async function getEnglishPhrasesBase(): Promise<Array<{ english: string; 
 }
 
 /**
- * Update a single phrase's completion status in Supabase
+ * Update a single phrase's completion status in user_phrases
  */
 export async function updatePhraseCompletion(
   phraseId: number,
@@ -198,47 +296,40 @@ export async function updatePhraseCompletion(
   if (!userId) return;
 
   const today = getTodayKey();
+  const finalRegion = region || "costa-rica";
+  const finalFormality = formality || "neutral";
 
   try {
-    // Update all matching records for today and region
-    let query = supabase
-      .from("user_phrases")
-      .select("phrases, region, formality")
-      .eq("user_id", userId)
-      .eq("date", today);
-
-    if (region) {
-      query = query.eq("region", region);
-    }
-
-    const { data: records, error: fetchError } = await query;
-
-    if (fetchError) {
-      console.error("Error fetching phrases for update:", fetchError);
+    // Get shared phrases to get the full phrase list
+    const sharedPhrases = await getSharedPhrases(today, finalRegion, finalFormality);
+    if (!sharedPhrases) {
+      console.error("Shared phrases not found for update");
       return;
     }
 
-    const typedRecords = (records as UserPhraseRecord[] | null) ?? null;
+    // Get current user completions
+    const currentCompletions = await getUserCompletions(today, finalRegion, finalFormality);
 
-    if (!typedRecords || typedRecords.length === 0) return;
+    // Update user's completion status
+    const updatedPhrases = sharedPhrases.map((p: Phrase) => ({
+      ...p,
+      used: p.id === phraseId ? used : (currentCompletions?.[p.id] ?? false),
+    }));
 
-    // Update each record
-    for (const record of typedRecords) {
-      const updatedPhrases = (record.phrases as Phrase[]).map((p: Phrase) =>
-        p.id === phraseId ? { ...p, used } : p
-      );
+    const { error: updateError } = await supabase
+      .from("user_phrases")
+      .upsert({
+        user_id: userId,
+        date: today,
+        region: finalRegion,
+        formality: finalFormality,
+        phrases: updatedPhrases,
+      }, {
+        onConflict: "user_id,date,region,formality",
+      });
 
-      const { error: updateError } = await supabase
-        .from("user_phrases")
-        .update({ phrases: updatedPhrases })
-        .eq("user_id", userId)
-        .eq("date", today)
-        .eq("region", record.region)
-        .eq("formality", record.formality);
-
-      if (updateError) {
-        console.error("Error updating phrase completion:", updateError);
-      }
+    if (updateError) {
+      console.error("Error updating phrase completion:", updateError);
     }
   } catch (error) {
     console.error("Error in updatePhraseCompletion:", error);
@@ -246,12 +337,9 @@ export async function updatePhraseCompletion(
 }
 
 /**
- * Get all English phrases from the last HISTORY_DAYS days
+ * Get all English phrases from the last HISTORY_DAYS days from shared daily_phrases
  */
 export async function getRecentEnglishPhrases(): Promise<string[]> {
-  const userId = await getUserId();
-  if (!userId) return [];
-
   const today = new Date();
   const cutoffDate = new Date(today);
   cutoffDate.setDate(cutoffDate.getDate() - HISTORY_DAYS);
@@ -261,9 +349,8 @@ export async function getRecentEnglishPhrases(): Promise<string[]> {
 
   try {
     const { data, error } = await supabase
-      .from("user_phrases")
+      .from("daily_phrases")
       .select("phrases, date")
-      .eq("user_id", userId)
       .gte("date", cutoffDateStr);
 
     if (error) {
@@ -289,4 +376,3 @@ export async function getRecentEnglishPhrases(): Promise<string[]> {
     return [];
   }
 }
-

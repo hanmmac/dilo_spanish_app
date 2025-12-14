@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { generatePhrases, translatePhrasesToRegion } from "@/lib/ai/phrases";
-import { PhraseGenerationParams } from "@/types/phrase";
+import { PhraseGenerationParams, Phrase } from "@/types/phrase";
 import { getAuthenticatedUser, checkRateLimit, logApiCall } from "@/lib/api-auth";
 
 const RATE_LIMIT_REQUESTS = 100;
@@ -123,15 +123,72 @@ export async function GET(request: NextRequest) {
     }
 
     // Normal generation mode
-    const params: PhraseGenerationParams = {
-      region,
-      formality,
-      count: Math.min(Math.max(count, 1), 20), // Clamp between 1-20
-      date,
-      recentPhrases: Array.isArray(recentPhrases) ? recentPhrases : [],
-    };
+    // First check if shared phrases already exist
+    const { createClient } = await import("@supabase/supabase-js");
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+    const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+    
+    const supabaseClient = createClient(supabaseUrl, supabaseAnonKey, {
+      global: {
+        headers: authToken ? { Authorization: `Bearer ${authToken}` } : {},
+      },
+    });
 
-    const phrases = await generatePhrases(params);
+    // Check if shared phrases exist
+    const { data: existingPhrases } = await supabaseClient
+      .from("daily_phrases")
+      .select("phrases")
+      .eq("date", date)
+      .eq("region", region)
+      .eq("formality", formality)
+      .single();
+
+    let phrases: Phrase[];
+    
+    if (existingPhrases?.phrases) {
+      // Use existing shared phrases
+      phrases = existingPhrases.phrases;
+    } else {
+      // Generate new phrases
+      const params: PhraseGenerationParams = {
+        region,
+        formality,
+        count: Math.min(Math.max(count, 1), 20), // Clamp between 1-20
+        date,
+        recentPhrases: Array.isArray(recentPhrases) ? recentPhrases : [],
+      };
+
+      phrases = await generatePhrases(params);
+      
+      // Save to shared daily_phrases (will handle race condition with unique constraint)
+      try {
+        await supabaseClient
+          .from("daily_phrases")
+          .insert({
+            date,
+            region,
+            formality,
+            phrases,
+          });
+      } catch (insertError: any) {
+        // If phrases were inserted by another request (race condition), fetch them
+        if (insertError.code === "23505") {
+          const { data: fetchedPhrases } = await supabaseClient
+            .from("daily_phrases")
+            .select("phrases")
+            .eq("date", date)
+            .eq("region", region)
+            .eq("formality", formality)
+            .single();
+          
+          if (fetchedPhrases?.phrases) {
+            phrases = fetchedPhrases.phrases;
+          }
+        } else {
+          console.error("Error saving shared phrases:", insertError);
+        }
+      }
+    }
 
     return NextResponse.json(
       {
