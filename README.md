@@ -1,23 +1,24 @@
 # Dilo - Spanish Learning App
 
-A minimal, beautiful Spanish learning app with AI-powered phrase generation.
+A minimal Spanish learning app that helps you practice 10 phrases every day with AI-powered generation.
 
 ## Features
 
-- 🎯 Daily checklist of 10 Spanish phrases
-- 🌍 Region-specific phrases (Spain, Mexico, Argentina, Colombia, Caribbean)
-- 📝 Formality filters (formal/informal)
-- 🤖 AI-generated phrases using OpenAI GPT-3.5-turbo
-- 🎨 Glassmorphism UI with rotating Hispanic city backgrounds
-- ✅ Progress tracking
+- Daily checklist of 10 Spanish phrases
+- Region-specific phrases currently specialized in Costa Rica (other regions soon)
+- Formality filters for formal, informal, or neutral speech
+- AI-generated phrases using OpenAI
+- Beautiful UI with rotating Hispanic city backgrounds
+- Progress tracking to keep you motivated
 
 ## Getting Started
 
 ### Prerequisites
 
-- Node.js 18+ 
+- Node.js 18 or higher
 - npm, yarn, pnpm, or bun
 - OpenAI API key ([Get one here](https://platform.openai.com/api-keys))
+- Supabase account and project
 
 ### Setup
 
@@ -30,6 +31,8 @@ A minimal, beautiful Spanish learning app with AI-powered phrase generation.
    Create a `.env.local` file in the root directory:
    ```bash
    OPENAI_API_KEY=your_openai_api_key_here
+   NEXT_PUBLIC_SUPABASE_URL=your_supabase_project_url
+   NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
    ```
 
 3. **Run the development server:**
@@ -43,18 +46,18 @@ A minimal, beautiful Spanish learning app with AI-powered phrase generation.
 ## Project Structure
 
 - `src/app/api/phrases/` - API route for AI phrase generation
+- `src/app/api/conjugate/` - API route for verb conjugation
 - `src/lib/ai/` - OpenAI client and phrase generation logic
+- `src/lib/supabase-storage.ts` - Database operations for phrases
 - `src/types/phrase.ts` - TypeScript types for phrases
 - `src/app/page.tsx` - Main app page with phrase checklist
+- `src/components/` - React components for the UI
 
 ## How It Works
 
-The app uses OpenAI's GPT-3.5-turbo to generate 10 Spanish phrases daily based on:
-- Selected region (general, Spain, Mexico, Argentina, etc.)
-- Formality preference (formal/informal/neutral)
-- Current date (for daily consistency)
+The app uses OpenAI to generate 10 Spanish phrases daily based on your selected region and formality preference. Phrases are shared across all users for the same day, region, and formality combination, ensuring consistency while reducing API costs.
 
-Phrases are generated on-demand when you change region or formality settings, ensuring fresh content while maintaining consistency for the same day.
+You can hover over verbs in phrases to see their conjugations, toggle phrase completion, and explore alternative ways to express the same idea.
 
 ## Learn More
 

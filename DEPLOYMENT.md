@@ -4,10 +4,10 @@ This guide walks you through deploying the Dilo Spanish App to production.
 
 ## Prerequisites
 
-- [ ] GitHub account and repository set up
-- [ ] Supabase project created
-- [ ] OpenAI API key
-- [ ] Vercel account (recommended) or Netlify account
+- [X] GitHub account and repository set up
+- [X] Supabase project created
+- [X] OpenAI API key
+- [X] Vercel account (recommended) or Netlify account
 
 ---
 
@@ -135,10 +135,10 @@ Add these same environment variables in your hosting platform:
 
 ### 4.1 Code Review
 
-- [ ] Remove any `console.log()` statements (except error logging)
-- [ ] Remove any debug code or test data
-- [ ] Verify all hardcoded values are in environment variables
-- [ ] Check that error handling is in place
+- [X] Remove any `console.log()` statements (except error logging)
+- [X] Remove any debug code or test data
+- [X] Verify all hardcoded values are in environment variables
+- [X] Check that error handling is in place
 
 ### 4.2 Build Test
 
