@@ -24,8 +24,8 @@ const HIGH_LATENCY_MS = 2500;
 const TRANSCRIPT_GROUP_MS = 1800;
 
 const SPEED_OPTIONS: { label: string; value: number }[] = [
-  { label: "🐢 Lenta", value: 0.8 },
-  { label: "Media", value: 0.9 },
+  { label: "🐢 Lenta", value: 0.7 }, // ElevenLabs floor — slowest it'll go
+  { label: "Media", value: 0.85 },
   { label: "Normal", value: 1.0 },
 ];
 
@@ -43,7 +43,7 @@ export function PracticePanel({ targetPhrase, targetEnglish, targetDifficulty }:
   const [lastLatency, setLastLatency] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [volume, setVolume] = useState(0);
-  const [speechSpeed, setSpeechSpeed] = useState(0.9);
+  const [speechSpeed, setSpeechSpeed] = useState(0.85);
 
   const vapiRef = useRef<Vapi | null>(null);
   const lastUserFinalAt = useRef<number | null>(null);

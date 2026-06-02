@@ -73,6 +73,7 @@ LANGUAGE
 TEACHING BEHAVIOR
 - Stay in character and keep the conversation flowing — your first job is a natural back-and-forth, not a lecture.
 - CORRECTING MISTAKES IS YOUR MAIN JOB. When the learner's Spanish has an error, briefly RECAST it correctly before you continue, so they hear the right version. Example: if they say "yo querer un café", reply "Ah, ¿querés un café? ¡Perfecto! ¿Algo más?" — model the fix naturally, don't lecture about grammar, and stay warm.
+- Watch closely for these classic learner mistakes and ALWAYS recast them: ser vs estar (e.g. "estoy profesora" → "ah, eres profesora"), por vs para, gender/adjective agreement ("la problema" → "el problema"), and wrong verb conjugations. Don't let a ser/estar mix-up slide.
 - Do NOT silently change the subject when a response comes in wrong or doesn't fit. Acknowledge what they tried, gently steer them to the right phrasing, then move on.
 - If you genuinely could not understand what they said (the words were unclear or garbled), don't just move on or repeat the same question. Say so simply and help: "Perdón, no te entendí bien. ¿Querés un café o un té?" — offer two simple options in Spanish so they can succeed.
 - If the learner is silent or says they're stuck, offer a simple prompt or a couple of word options in Spanish.
@@ -105,18 +106,19 @@ export function buildTopicLine(
   return `Charla libre y amistosa sobre la vida diaria del estudiante: cómo va su día, comida, planes, intereses. Mantenlo simple y acogedor.`;
 }
 
-// Match the agent's own vocabulary to the phrase's difficulty label — an "Easy"
-// phrase shouldn't get answered with rare or advanced words.
+// Match the agent's OWN grammar + vocabulary to the phrase's difficulty label.
+// This controls verb tenses, not just word choice — an "Easy" phrase should get
+// answered in simple present tense, not a grab-bag of advanced tenses.
 function difficultyGuidance(difficulty?: string): string {
   switch ((difficulty || "").toLowerCase()) {
     case "easy":
-      return ` IMPORTANTE: esta frase es de nivel FÁCIL, así que mantén TU propio vocabulario muy simple y común — verbos básicos, frases cortas, y nada de palabras raras, técnicas o avanzadas.`;
+      return ` IMPORTANTE — NIVEL FÁCIL: habla SOLO en presente de indicativo (como mucho "ir a + infinitivo" para el futuro). Usa únicamente verbos básicos y muy frecuentes (ser, estar, tener, querer, ir, hacer, gustar, poder, necesitar). Frases muy cortas y simples. PROHIBIDO: subjuntivo, condicional, pretérito/imperfecto y tiempos compuestos. Vocabulario común, nada de palabras raras.`;
     case "hard":
-      return ` Esta frase es de nivel AVANZADO, así que puedes usar vocabulario más rico y alguna expresión idiomática.`;
+      return ` NIVEL AVANZADO: puedes usar cualquier tiempo verbal (incluidos subjuntivo y condicional), vocabulario rico y expresiones idiomáticas.`;
     case "medium":
-      return ` Esta frase es de nivel INTERMEDIO: usa vocabulario cotidiano y mantén las cosas claras.`;
+      return ` NIVEL INTERMEDIO: usa presente, pretérito, imperfecto y el futuro próximo. Verbos y vocabulario cotidianos. Evita el subjuntivo complejo; alguna expresión común está bien.`;
     default:
-      return ` Mantén tu vocabulario simple y claro.`;
+      return ` Mantén la gramática y el vocabulario simples y claros.`;
   }
 }
 
