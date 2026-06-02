@@ -3,7 +3,7 @@ import { Phrase, PhraseGenerationParams, Difficulty } from "@/types/phrase";
 
 const REGION_DESCRIPTIONS: Record<string, string> = {
   general: "general/neutral Spanish that works across all regions",
-  spain: "Spain (Castilian Spanish) - use 'vosotros' forms and Spain-specific vocabulary",
+  spain: "Spain (Madrid / Castilian Spanish) - use 'vosotros' for plural 'you', the present perfect for recent past ('¿Has comido hoy?'), and 'coger' freely (it's normal here). Use everyday Madrid vocabulary: 'móvil' (phone), 'coche' (car), 'ordenador' (computer), 'zumo' (juice), 'patatas', 'piso' (apartment), 'caña' (small beer), 'tapas'. Sprinkle in common colloquialisms naturally: 'vale' (ok), 'tío/tía' (dude/mate), 'guay' (cool), 'molar' (to be cool/to like - 'me mola'), 'currar/curro' (to work/job), 'majo/maja' (nice), 'venga' (come on/alright), 'en plan' (like/sort of), 'flipar' (to be amazed), 'qué fuerte' (wow). Say 'vale' instead of 'está bien'.",
   mexico: "Mexico - use Mexican Spanish with local expressions and vocabulary",
   argentina: "Argentina - use Argentine Spanish with 'vos' forms and local expressions",
   colombia: "Colombia - use Colombian Spanish with local expressions",
