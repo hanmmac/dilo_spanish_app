@@ -13,15 +13,13 @@ interface AuthProps {
 
 export function Auth({ onAuthSuccess }: AuthProps) {
   const [isSignUp, setIsSignUp] = useState(false);
-  const [sitePassword, setSitePassword] = useState("");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+  // prefilled with the demo account so the cofounder can just hit sign in
+  const [email, setEmail] = useState("demo@dilo.app");
+  const [password, setPassword] = useState("Demodilo1");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const passwordStartedTypingRef = useRef(false);
-
-  const SITE_PASSWORD = "ilovebmo";
 
   // Start pre-loading phrases when user starts typing password
   const handlePasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -37,13 +35,6 @@ export function Auth({ onAuthSuccess }: AuthProps) {
     setLoading(true);
     setError(null);
     setMessage(null);
-
-    // Validate site password first
-    if (sitePassword !== SITE_PASSWORD) {
-      setError("Incorrect site password. Please contact the site administrator.");
-      setLoading(false);
-      return;
-    }
 
     try {
       if (isSignUp) {
@@ -75,12 +66,12 @@ export function Auth({ onAuthSuccess }: AuthProps) {
               // Get today's date key
               const today = new Date().toISOString().split('T')[0];
               // Use default region and formality (will be overridden by page.tsx with user's actual settings)
-              const region = "costa-rica";
+              const region = "spain";
               const formality = "neutral";
-              
+
               // Start the API call (fire and forget - page.tsx will handle the actual state)
               fetch(
-                `/api/phrases?region=${region}&formality=${formality}&count=10&date=${today}`,
+                `/api/phrases?region=${region}&formality=${formality}&count=5&date=${today}`,
                 {
                   credentials: "include",
                   headers: { Authorization: `Bearer ${session.access_token}` },
@@ -138,7 +129,7 @@ export function Auth({ onAuthSuccess }: AuthProps) {
                   <div>
                     <p className="font-semibold text-slate-900">Curated Phrases</p>
                     <p className="text-sm text-slate-600">
-                      Ten region-specific lines with formality context.
+                      Five region-specific lines with formality context.
                     </p>
                   </div>
                 </div>
@@ -173,12 +164,6 @@ export function Auth({ onAuthSuccess }: AuthProps) {
                   </p>
                   <p className="text-lg font-semibold text-slate-900">morning at 7am</p>
                 </div>
-                <div>
-                  <p className="text-xs uppercase tracking-wide text-slate-500">
-                    In beta for
-                  </p>
-                  <p className="text-lg font-semibold text-slate-900">Costa Rica</p>
-                </div>
               </div>
             </div>
 
@@ -200,22 +185,6 @@ export function Auth({ onAuthSuccess }: AuthProps) {
                 </div>
 
                 <form onSubmit={handleSubmit} className="space-y-5">
-                  <div className="space-y-2">
-                    <Label htmlFor="site-password" className="text-white/90">
-                      Site Password
-                    </Label>
-                    <Input
-                      id="site-password"
-                      type="password"
-                      placeholder="Enter site password"
-                      value={sitePassword}
-                      onChange={(e) => setSitePassword(e.target.value)}
-                      required
-                      className="bg-white/5 border-white/20 text-white placeholder:text-white/50 h-11 focus:bg-white/10"
-                      disabled={loading}
-                    />
-                  </div>
-
                   <div className="space-y-2">
                     <Label htmlFor="email" className="text-white/90">
                       Email
@@ -285,7 +254,6 @@ export function Auth({ onAuthSuccess }: AuthProps) {
                       setIsSignUp(!isSignUp);
                       setError(null);
                       setMessage(null);
-                      setSitePassword(""); // Clear site password when switching
                     }}
                     className="text-white font-semibold hover:underline focus:outline-none"
                   >
