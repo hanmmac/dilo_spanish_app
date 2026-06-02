@@ -44,8 +44,12 @@ export function PracticePanel({ targetPhrase, targetEnglish, targetDifficulty }:
   const [error, setError] = useState<string | null>(null);
   const [volume, setVolume] = useState(0);
   const [speechSpeed, setSpeechSpeed] = useState(0.85);
+  // push-to-talk: mic only live while the button is held (cleaner audio, no echo)
+  const [pushToTalk, setPushToTalk] = useState(false);
+  const [talking, setTalking] = useState(false);
 
   const vapiRef = useRef<Vapi | null>(null);
+  const pushToTalkRef = useRef(false);
   const lastUserFinalAt = useRef<number | null>(null);
   const assistantSpeaking = useRef(false);
   const lastFinalAt = useRef<number | null>(null);
@@ -53,6 +57,11 @@ export function PracticePanel({ targetPhrase, targetEnglish, targetDifficulty }:
   const transcriptEndRef = useRef<HTMLDivElement | null>(null);
 
   const configured = Boolean(PUBLIC_KEY && ASSISTANT_ID);
+
+  // keep a ref in sync so the call-start handler sees the current PTT mode
+  useEffect(() => {
+    pushToTalkRef.current = pushToTalk;
+  }, [pushToTalk]);
 
   useEffect(() => {
     transcriptEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -71,7 +80,11 @@ export function PracticePanel({ targetPhrase, targetEnglish, targetDifficulty }:
   };
 
   const wireEvents = useCallback((vapi: Vapi) => {
-    vapi.on("call-start", () => setStatus("active"));
+    vapi.on("call-start", () => {
+      setStatus("active");
+      // in PTT mode the mic starts muted — held button unmutes it
+      if (pushToTalkRef.current) vapi.setMuted(true);
+    });
     vapi.on("call-end", () => {
       setStatus("ended");
       assistantSpeaking.current = false;
@@ -171,6 +184,28 @@ export function PracticePanel({ targetPhrase, targetEnglish, targetDifficulty }:
     vapiRef.current?.stop();
   };
 
+  // hold-to-talk (only meaningful in PTT mode)
+  const startTalking = () => {
+    if (status !== "active" || !pushToTalk) return;
+    vapiRef.current?.setMuted(false);
+    setTalking(true);
+  };
+  const stopTalking = () => {
+    if (!pushToTalk) return;
+    vapiRef.current?.setMuted(true);
+    setTalking(false);
+  };
+
+  // toggling PTT mid-call: mute when turning on, unmute when turning off
+  const togglePushToTalk = () => {
+    const next = !pushToTalk;
+    setPushToTalk(next);
+    if (status === "active") {
+      vapiRef.current?.setMuted(next);
+      setTalking(false);
+    }
+  };
+
   // stop any live call if the panel unmounts (e.g. the sheet closes)
   useEffect(() => {
     return () => {
@@ -242,7 +277,7 @@ export function PracticePanel({ targetPhrase, targetEnglish, targetDifficulty }:
         <div className="text-center text-sm font-medium text-slate-700">
           {status === "idle" && "Tap to start a Spanish conversation"}
           {status === "connecting" && "Connecting…"}
-          {status === "active" && "Listening — habla en español"}
+          {status === "active" && (pushToTalk ? "Hold the button to talk" : "Listening — habla en español")}
           {status === "ending" && "Ending…"}
           {status === "ended" && "Call ended"}
         </div>
@@ -268,6 +303,34 @@ export function PracticePanel({ targetPhrase, targetEnglish, targetDifficulty }:
             Velocidad de voz{status === "active" ? " · applies next session" : ""}
           </span>
         </div>
+
+        {/* push-to-talk mode toggle */}
+        <button
+          onClick={togglePushToTalk}
+          className={`flex items-center gap-2 rounded-lg border px-3 py-1.5 text-xs font-medium transition-colors ${
+            pushToTalk
+              ? "border-emerald-400 bg-emerald-50 text-emerald-700"
+              : "border-slate-300 bg-white/90 text-slate-600 hover:text-black"
+          }`}
+        >
+          <span className={`inline-block h-2 w-2 rounded-full ${pushToTalk ? "bg-emerald-500" : "bg-slate-400"}`} />
+          Pulsar para hablar · {pushToTalk ? "ON" : "OFF"}
+        </button>
+
+        {status === "active" && pushToTalk && (
+          <button
+            onMouseDown={startTalking}
+            onMouseUp={stopTalking}
+            onMouseLeave={stopTalking}
+            onTouchStart={startTalking}
+            onTouchEnd={stopTalking}
+            className={`w-full select-none rounded-xl px-6 py-4 text-base font-semibold text-white shadow transition-all ${
+              talking ? "scale-[1.02] bg-emerald-600" : "bg-emerald-500 hover:bg-emerald-600"
+            }`}
+          >
+            {talking ? "🎤 Escuchando… (suelta para enviar)" : "🎤 Mantén pulsado para hablar"}
+          </button>
+        )}
 
         {!isLive ? (
           <Button onClick={startCall} disabled={!configured} className="bg-emerald-500 px-6 text-white hover:bg-emerald-600">
