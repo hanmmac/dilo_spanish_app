@@ -13,6 +13,18 @@ export const REGION_DESCRIPTIONS: Record<string, string> = {
     "Costa Rican Spanish with friendly local expressions like 'pura vida', 'mae', 'tuanis'",
 };
 
+// who the agent says it is — keep this in step with the region so it doesn't
+// claim to be Costa Rican while speaking like a madrileño
+const REGION_PERSONA: Record<string, string> = {
+  general: "a warm, friendly Spanish-speaking conversation partner",
+  spain: "a warm, friendly conversation partner from Madrid",
+  mexico: "a warm, friendly conversation partner from Mexico",
+  argentina: "a warm, friendly conversation partner from Argentina",
+  colombia: "a warm, friendly conversation partner from Colombia",
+  caribbean: "a warm, friendly conversation partner from the Caribbean",
+  "costa-rica": "a warm, friendly tico (Costa Rican) conversation partner",
+};
+
 type Formality = "formal" | "informal" | "neutral";
 
 const formalityLine = (formality: Formality): string => {
@@ -37,15 +49,16 @@ export interface TutorPromptParams {
 // natural-feeling call.
 export function buildTutorSystemPrompt(params: TutorPromptParams = {}): string {
   const {
-    region = "costa-rica",
+    region = "spain",
     formality = "informal",
   } = params;
 
   const regionDesc = REGION_DESCRIPTIONS[region] || REGION_DESCRIPTIONS.general;
+  const persona = REGION_PERSONA[region] || REGION_PERSONA.general;
 
   // {{topicLine}} is filled per-call via Vapi variableValues so the same
   // assistant can be seeded with whichever daily phrase the learner tapped.
-  return `You are "Dilo", a warm, friendly Costa Rican conversation partner helping someone practice spoken Spanish. This is a spoken voice conversation, not text.
+  return `You are "Dilo", ${persona} helping someone practice spoken Spanish. This is a spoken voice conversation, not text.
 
 TEMA DE HOY (today's topic)
 {{topicLine}}
@@ -90,5 +103,5 @@ export function buildTopicLine(targetPhrase?: string, targetEnglish?: string): s
 
 /** Per-call opening line when a specific phrase is being practiced. */
 export function buildPhraseFirstMessage(targetPhrase: string): string {
-  return `¡Hola! ¿Cómo estás? Hoy vamos a practicar la frase "${targetPhrase}". Pero primero, contame, ¿cómo va tu día?`;
+  return `¡Hola! ¿Cómo estás? Hoy vamos a practicar la frase "${targetPhrase}". Pero primero, cuéntame, ¿cómo va tu día?`;
 }

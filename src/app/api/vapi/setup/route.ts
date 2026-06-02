@@ -21,7 +21,7 @@ export async function POST(req: NextRequest) {
   const sp = req.nextUrl.searchParams;
   const serverUrl = sp.get("serverUrl") || undefined;
   const voiceId = sp.get("voiceId") || undefined;
-  const region = sp.get("region") || "costa-rica";
+  const region = sp.get("region") || "spain";
   const formality = (sp.get("formality") as any) || "informal";
 
   const payload: Record<string, any> = {

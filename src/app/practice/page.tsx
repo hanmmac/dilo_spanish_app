@@ -1,20 +1,16 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Suspense } from "react";
+import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { BarChart3 } from "lucide-react";
 import { PracticePanel } from "@/components/PracticePanel";
 
 // Standalone practice route (the same panel is also used as a slide-out on home).
-export default function PracticePage() {
-  const [targetPhrase, setTargetPhrase] = useState<string | null>(null);
-  const [targetEnglish, setTargetEnglish] = useState<string | null>(null);
-
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    setTargetPhrase(params.get("phrase"));
-    setTargetEnglish(params.get("english"));
-  }, []);
+function PracticeRoute() {
+  const sp = useSearchParams();
+  const targetPhrase = sp.get("phrase");
+  const targetEnglish = sp.get("english");
 
   return (
     <div className="min-h-screen bg-slate-950">
@@ -33,5 +29,13 @@ export default function PracticePage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function PracticePage() {
+  return (
+    <Suspense fallback={null}>
+      <PracticeRoute />
+    </Suspense>
   );
 }
