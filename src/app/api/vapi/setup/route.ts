@@ -26,10 +26,11 @@ export async function POST(req: NextRequest) {
 
   const payload: Record<string, any> = {
     firstMessage: TUTOR_FIRST_MESSAGE,
-    // haiku is fast and its Spanish is plenty good for a voice loop
+    // sonnet catches subtle grammar mistakes (agreement, ser/estar) way better
+    // than haiku — worth the small latency hit for a tutor
     model: {
       provider: "anthropic",
-      model: "claude-haiku-4-5-20251001",
+      model: "claude-sonnet-4-6",
       messages: [
         { role: "system", content: buildTutorSystemPrompt({ region, formality }) },
       ],
