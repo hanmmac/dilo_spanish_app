@@ -32,9 +32,10 @@ const SPEED_OPTIONS: { label: string; value: number }[] = [
 interface PracticePanelProps {
   targetPhrase?: string | null;
   targetEnglish?: string | null;
+  targetDifficulty?: string | null;
 }
 
-export function PracticePanel({ targetPhrase, targetEnglish }: PracticePanelProps) {
+export function PracticePanel({ targetPhrase, targetEnglish, targetDifficulty }: PracticePanelProps) {
   const [status, setStatus] = useState<Status>("idle");
   const [transcript, setTranscript] = useState<TranscriptLine[]>([]);
   const [turns, setTurns] = useState<TurnMetric[]>([]);
@@ -147,7 +148,11 @@ export function PracticePanel({ targetPhrase, targetEnglish }: PracticePanelProp
           speed: speechSpeed,
         },
         variableValues: {
-          topicLine: buildTopicLine(targetPhrase ?? undefined, targetEnglish ?? undefined),
+          topicLine: buildTopicLine(
+            targetPhrase ?? undefined,
+            targetEnglish ?? undefined,
+            targetDifficulty ?? undefined
+          ),
         },
       };
       if (targetPhrase) {
@@ -181,19 +186,19 @@ export function PracticePanel({ targetPhrase, targetEnglish }: PracticePanelProp
   const isLive = status === "active" || status === "connecting" || status === "ending";
 
   return (
-    <div className="flex h-full flex-col gap-5 overflow-y-auto rounded-l-3xl border-l border-white/60 bg-white/80 p-7 text-black backdrop-blur-2xl">
+    <div className="flex h-full flex-col gap-3 rounded-l-3xl border-l border-white/60 bg-white/80 p-6 text-black backdrop-blur-2xl">
       <div>
-        <h2 className="text-3xl font-bold tracking-tight text-black">Práctica de voz</h2>
-        <p className="text-base text-slate-700">Live Spanish conversation practice</p>
+        <h2 className="text-2xl font-bold tracking-tight text-black">Práctica de voz</h2>
+        <p className="text-sm text-slate-700">Live Spanish conversation practice</p>
       </div>
 
       {targetPhrase && (
-        <div className="rounded-2xl border border-emerald-300 bg-emerald-50/80 p-5">
-          <div className="text-xs font-medium uppercase tracking-wide text-emerald-700">
+        <div className="rounded-2xl border border-emerald-300 bg-emerald-50/80 px-4 py-3">
+          <div className="text-[11px] font-medium uppercase tracking-wide text-emerald-700">
             Practicando esta frase
           </div>
-          <div className="mt-1 text-2xl font-bold text-emerald-900">«{targetPhrase}»</div>
-          {targetEnglish && <div className="text-base text-emerald-800">{targetEnglish}</div>}
+          <div className="mt-0.5 text-xl font-bold text-emerald-900">«{targetPhrase}»</div>
+          {targetEnglish && <div className="text-sm text-emerald-800">{targetEnglish}</div>}
         </div>
       )}
 
@@ -208,7 +213,7 @@ export function PracticePanel({ targetPhrase, targetEnglish }: PracticePanelProp
       )}
 
       {/* metrics */}
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
         <Metric label="Last turn" value={lastLatency != null ? `${lastLatency} ms` : "—"} highlight={lastLatency != null && lastLatency > HIGH_LATENCY_MS} />
         <Metric label="Avg latency" value={avgLatency != null ? `${avgLatency} ms` : "—"} />
         <Metric label="Turns" value={String(turns.length)} />
@@ -216,9 +221,9 @@ export function PracticePanel({ targetPhrase, targetEnglish }: PracticePanelProp
       </div>
 
       {/* call control */}
-      <div className="flex flex-col items-center gap-4 rounded-2xl border border-white/70 bg-white/70 p-6 shadow-sm">
+      <div className="flex flex-col items-center gap-2 rounded-2xl border border-white/70 bg-white/70 p-3 shadow-sm">
         <div
-          className="flex h-28 w-28 items-center justify-center rounded-full border-2 bg-white/80 transition-all"
+          className="flex h-11 w-11 items-center justify-center rounded-full border-2 bg-white/80 transition-all"
           style={{
             borderColor: status === "active" ? "#10b981" : "#94a3b8",
             boxShadow:
@@ -228,13 +233,13 @@ export function PracticePanel({ targetPhrase, targetEnglish }: PracticePanelProp
           }}
         >
           {status === "connecting" || status === "ending" ? (
-            <Loader2 className="h-9 w-9 animate-spin text-slate-500" />
+            <Loader2 className="h-5 w-5 animate-spin text-slate-500" />
           ) : (
-            <Mic className={`h-9 w-9 ${status === "active" ? "text-emerald-500" : "text-slate-500"}`} />
+            <Mic className={`h-5 w-5 ${status === "active" ? "text-emerald-500" : "text-slate-500"}`} />
           )}
         </div>
 
-        <div className="text-center text-base font-medium text-slate-700">
+        <div className="text-center text-sm font-medium text-slate-700">
           {status === "idle" && "Tap to start a Spanish conversation"}
           {status === "connecting" && "Connecting…"}
           {status === "active" && "Listening — habla en español"}
@@ -265,13 +270,13 @@ export function PracticePanel({ targetPhrase, targetEnglish }: PracticePanelProp
         </div>
 
         {!isLive ? (
-          <Button onClick={startCall} disabled={!configured} size="lg" className="bg-emerald-500 px-8 text-base text-white hover:bg-emerald-600">
-            <Mic className="mr-2 h-5 w-5" />
+          <Button onClick={startCall} disabled={!configured} className="bg-emerald-500 px-6 text-white hover:bg-emerald-600">
+            <Mic className="mr-2 h-4 w-4" />
             {status === "ended" ? "Start again" : "Start session"}
           </Button>
         ) : (
-          <Button onClick={stopCall} variant="destructive" size="lg" className="px-8 text-base" disabled={status === "connecting"}>
-            <PhoneOff className="mr-2 h-5 w-5" />
+          <Button onClick={stopCall} variant="destructive" className="px-6" disabled={status === "connecting"}>
+            <PhoneOff className="mr-2 h-4 w-4" />
             End call
           </Button>
         )}
@@ -282,7 +287,7 @@ export function PracticePanel({ targetPhrase, targetEnglish }: PracticePanelProp
       {/* transcript */}
       <div className="flex min-h-0 flex-1 flex-col">
         <h3 className="mb-2 text-sm font-semibold uppercase tracking-wide text-slate-600">Transcript</h3>
-        <div className="min-h-[12rem] flex-1 space-y-2 overflow-y-auto rounded-2xl border border-white/70 bg-white/65 p-4">
+        <div className="min-h-0 flex-1 space-y-2 overflow-y-auto rounded-2xl border border-white/70 bg-white/65 p-4 text-base">
           {transcript.length === 0 ? (
             <p className="text-sm text-slate-500">The conversation will appear here…</p>
           ) : (
@@ -309,9 +314,9 @@ export function PracticePanel({ targetPhrase, targetEnglish }: PracticePanelProp
 
 function Metric({ label, value, highlight }: { label: string; value: string; highlight?: boolean }) {
   return (
-    <div className={`rounded-2xl border p-3.5 ${highlight ? "border-amber-300 bg-amber-50/80" : "border-white/70 bg-white/70"}`}>
-      <div className="text-xs uppercase tracking-wide text-slate-600">{label}</div>
-      <div className={`mt-0.5 text-2xl font-bold ${highlight ? "text-amber-600" : "text-black"}`}>{value}</div>
+    <div className={`rounded-xl border p-2.5 ${highlight ? "border-amber-300 bg-amber-50/80" : "border-white/70 bg-white/70"}`}>
+      <div className="text-[10px] uppercase tracking-wide text-slate-600">{label}</div>
+      <div className={`mt-0.5 text-lg font-bold ${highlight ? "text-amber-600" : "text-black"}`}>{value}</div>
     </div>
   );
 }

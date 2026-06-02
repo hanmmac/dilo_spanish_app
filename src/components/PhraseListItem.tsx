@@ -14,7 +14,7 @@ interface PhraseListItemProps extends Omit<Phrase, "id" | "used"> {
   used: boolean;
   onToggleUsed: (id: number) => void;
   onOpenAlternatives: (phrase: { spanish: string; english: string; alternatives?: Phrase["alternatives"] }) => void;
-  onPractice: (phrase: { spanish: string; english: string }) => void;
+  onPractice: (phrase: { spanish: string; english: string; difficulty: string }) => void;
 }
 
 export function PhraseListItem({
@@ -604,7 +604,7 @@ export function PhraseListItem({
           </Button>
           <button
             type="button"
-            onClick={() => onPractice({ spanish, english })}
+            onClick={() => onPractice({ spanish, english, difficulty })}
             title="Practice this phrase out loud"
             className="inline-flex h-6 sm:h-7 md:h-8 items-center gap-1 rounded-md bg-black/70 px-2 text-[10px] sm:text-xs font-semibold text-white hover:bg-black/85 transition-colors flex-shrink-0 shadow-md"
           >

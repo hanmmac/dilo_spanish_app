@@ -93,12 +93,31 @@ export const TUTOR_FIRST_MESSAGE =
  * Builds the per-call topic line injected via Vapi `variableValues.topicLine`.
  * When the learner taps a daily phrase, we seed the conversation around it.
  */
-export function buildTopicLine(targetPhrase?: string, targetEnglish?: string): string {
+export function buildTopicLine(
+  targetPhrase?: string,
+  targetEnglish?: string,
+  difficulty?: string
+): string {
   if (targetPhrase && targetPhrase.trim()) {
     const eng = targetEnglish ? ` (en inglés: "${targetEnglish}")` : "";
-    return `El estudiante quiere practicar la frase "${targetPhrase}"${eng}. Charla de forma natural sobre ese tema y guía la conversación para que tenga oportunidades de usar esa frase y vocabulario relacionado.`;
+    return `El estudiante quiere practicar la frase "${targetPhrase}"${eng}. Charla de forma natural sobre ese tema y guía la conversación para que tenga oportunidades de usar esa frase y vocabulario relacionado.${difficultyGuidance(difficulty)}`;
   }
   return `Charla libre y amistosa sobre la vida diaria del estudiante: cómo va su día, comida, planes, intereses. Mantenlo simple y acogedor.`;
+}
+
+// Match the agent's own vocabulary to the phrase's difficulty label — an "Easy"
+// phrase shouldn't get answered with rare or advanced words.
+function difficultyGuidance(difficulty?: string): string {
+  switch ((difficulty || "").toLowerCase()) {
+    case "easy":
+      return ` IMPORTANTE: esta frase es de nivel FÁCIL, así que mantén TU propio vocabulario muy simple y común — verbos básicos, frases cortas, y nada de palabras raras, técnicas o avanzadas.`;
+    case "hard":
+      return ` Esta frase es de nivel AVANZADO, así que puedes usar vocabulario más rico y alguna expresión idiomática.`;
+    case "medium":
+      return ` Esta frase es de nivel INTERMEDIO: usa vocabulario cotidiano y mantén las cosas claras.`;
+    default:
+      return ` Mantén tu vocabulario simple y claro.`;
+  }
 }
 
 /** Per-call opening line when a specific phrase is being practiced. */

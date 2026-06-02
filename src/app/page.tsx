@@ -95,7 +95,7 @@ export default function Home() {
   const [alternativesOpen, setAlternativesOpen] = useState(false);
   const [selectedPhrase, setSelectedPhrase] = useState<{ spanish: string; english: string; alternatives?: Phrase["alternatives"] } | null>(null);
   const [region, setRegion] = useState("spain");
-  const [practicePhrase, setPracticePhrase] = useState<{ spanish: string; english: string } | null>(null);
+  const [practicePhrase, setPracticePhrase] = useState<{ spanish: string; english: string; difficulty: string } | null>(null);
   const [formalOnly, setFormalOnly] = useState(false);
   const [isSwitchingFormality, setIsSwitchingFormality] = useState(false);
 
@@ -318,7 +318,7 @@ export default function Home() {
 
       {/* Content */}
       <div className="relative z-10 min-h-screen">
-        <main className="max-w-4xl mx-auto px-4 sm:px-6 py-8 pb-24">
+        <main className="max-w-6xl 2xl:max-w-7xl mx-auto px-4 sm:px-6 py-8 pb-24">
             {/* Main glass container */}
             <div className="glass rounded-3xl p-6 sm:p-8 space-y-6 bg-white/55 border-white/40">
               {/* Header inside glass */}
@@ -467,13 +467,14 @@ export default function Home() {
       >
         <SheetContent
           side="right"
-          className="w-full border-0 bg-transparent p-0 shadow-2xl sm:max-w-3xl"
+          className="w-full border-0 bg-transparent p-0 shadow-2xl sm:max-w-4xl"
         >
           <SheetTitle className="sr-only">Voice practice</SheetTitle>
           {practicePhrase && (
             <PracticePanel
               targetPhrase={practicePhrase.spanish}
               targetEnglish={practicePhrase.english}
+              targetDifficulty={practicePhrase.difficulty}
             />
           )}
         </SheetContent>
