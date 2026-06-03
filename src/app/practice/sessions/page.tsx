@@ -82,8 +82,8 @@ export default async function SessionsPage() {
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100">
       <div className="mx-auto max-w-4xl px-4 py-10">
-        <Link href="/practice" className="inline-flex items-center gap-2 text-sm text-slate-400 hover:text-slate-200">
-          <ArrowLeft className="h-4 w-4" /> Back to practice
+        <Link href="/" className="inline-flex items-center gap-2 text-sm text-slate-400 hover:text-slate-200">
+          <ArrowLeft className="h-4 w-4" /> Back to Dilo
         </Link>
 
         <h1 className="mt-4 text-2xl font-bold tracking-tight">Voice agent observability</h1>
@@ -152,8 +152,8 @@ export default async function SessionsPage() {
           <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-slate-500">All sessions</h2>
           {list.length === 0 ? (
             <p className="rounded-xl border border-slate-800 bg-slate-900/40 p-6 text-sm text-slate-500">
-              No sessions yet. Start a call on the{" "}
-              <Link href="/practice" className="underline">practice page</Link>, then refresh.
+              No sessions yet. Start a call from{" "}
+              <Link href="/" className="underline">Dilo</Link>, then refresh.
             </p>
           ) : (
             <div className="overflow-hidden rounded-xl border border-slate-800">
