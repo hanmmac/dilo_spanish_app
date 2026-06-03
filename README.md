@@ -1,75 +1,96 @@
-# Dilo - Spanish Learning App
+# Dilo 🇪🇸
 
-A minimal Spanish learning app that helps you practice 10 phrases every day with AI-powered generation.
+A little Spanish app I built to keep myself practicing. It gives you a handful of
+phrases a day to work into conversation — and now you can actually **call a voice
+agent and practice them out loud**.
 
-## Features
+I started it as a text-only "phrase of the day" thing a few months back. Recently I
+extended it into a voice agent: tap a phrase, a panel slides out, and you have a
+short spoken conversation in Spanish built around that phrase. I'm using it to
+practice my own Spanish here in Madrid.
 
-- Daily checklist of 10 Spanish phrases
-- Region-specific phrases currently specialized in Costa Rica (other regions soon)
-- Formality filters for formal, informal, or neutral speech
-- AI-generated phrases using OpenAI
-- Beautiful UI with rotating Hispanic city backgrounds
-- Progress tracking to keep you motivated
+## What's in here
 
-## Getting Started
+**The original app**
+- Daily Spanish phrases generated with OpenAI (region + formality aware)
+- Verb conjugation tooltips, alternatives, progress tracking
+- Supabase for auth + storage
 
-### Prerequisites
+**The voice agent (the new part)**
+- Tap **Practicar** on a phrase → a frosted-glass panel slides in
+- Live spoken conversation with a Madrid-Spanish tutor
+- Gentle corrections, English help when you're stuck, adjustable speech speed
+- Live transcript + per-turn latency right on screen
+- An **Admin** dashboard that logs every call: latency, interruptions, and where
+  the agent breaks down
 
-- Node.js 18 or higher
-- npm, yarn, pnpm, or bun
-- OpenAI API key ([Get one here](https://platform.openai.com/api-keys))
-- Supabase account and project
+## Stack
 
-### Setup
+Next.js (App Router) · TypeScript · Tailwind/shadcn · Supabase · OpenAI
 
-1. **Install dependencies:**
-   ```bash
-   npm install
-   ```
+For voice: **[Vapi](https://vapi.ai)** runs the call loop, with **Speechmatics**
+(speech-to-text), **Claude Haiku 4.5** (the tutor brain), and **ElevenLabs** (the
+voice). I went through a few transcribers before landing on Speechmatics — notes on
+why are in [`TUNING_LOG.md`](./TUNING_LOG.md).
 
-2. **Set up environment variables:**
-   Create a `.env.local` file in the root directory:
-   ```bash
-   OPENAI_API_KEY=your_openai_api_key_here
-   NEXT_PUBLIC_SUPABASE_URL=your_supabase_project_url
-   NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
-   ```
+## How the voice part fits together
 
-3. **Run the development server:**
-   ```bash
-   npm run dev
-   ```
+```
+ Browser (Practicar panel)            Vapi                    This app
+ ─────────────────────────   WebRTC   ───────────   events   ─────────────────────
+  @vapi-ai/web SDK         ◄────────►  Speechmatics  ───────►  /api/vapi/webhook
+   • live transcript                   Claude Haiku            → Supabase
+   • per-turn latency                  ElevenLabs              (voice_sessions,
+                                                                voice_turns)
+                                                              /practice/sessions
+                                                               reads it back (Admin)
+```
 
-4. **Open your browser:**
-   Navigate to [http://localhost:3000](http://localhost:3000)
+The assistant is configured from code (`/api/vapi/setup`) instead of by hand in the
+dashboard, so it's reproducible and lives in git. Each call injects the day's phrase
+as the topic via Vapi `variableValues`.
 
-## Project Structure
+## Running it
 
-- `src/app/api/phrases/` - API route for AI phrase generation
-- `src/app/api/conjugate/` - API route for verb conjugation
-- `src/lib/ai/` - OpenAI client and phrase generation logic
-- `src/lib/supabase-storage.ts` - Database operations for phrases
-- `src/types/phrase.ts` - TypeScript types for phrases
-- `src/app/page.tsx` - Main app page with phrase checklist
-- `src/components/` - React components for the UI
+```bash
+npm install
+cp .env.example .env.local   # then fill in the keys
+npm run dev
+```
 
-## How It Works
+Open http://localhost:3000. You'll need OpenAI + Supabase keys for the base app, and
+Vapi + a webhook tunnel for the voice part — full voice setup is in
+[`VOICE_SETUP.md`](./VOICE_SETUP.md).
 
-The app uses OpenAI to generate 10 Spanish phrases daily based on your selected region and formality preference. Phrases are shared across all users for the same day, region, and formality combination, ensuring consistency while reducing API costs.
+```bash
+npm run test    # vitest
+npm run lint
+```
 
-You can hover over verbs in phrases to see their conjugations, toggle phrase completion, and explore alternative ways to express the same idea.
+## How I work in this repo
 
-## Learn More
+- `main` stays deployable. Features go on their own branch (`voice-agent`, etc.) and
+  come back through a PR.
+- Small, focused commits with messages that say *why*, not just *what*.
+- Secrets live in `.env.local` (gitignored). `.env.example` documents what's needed.
+- Config-as-code where I can — the Vapi assistant is set up by an API route, not
+  clicked together in a dashboard, so it's reviewable and reproducible.
 
-To learn more about Next.js, take a look at the following resources:
+## Layout
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+```
+src/
+  app/
+    page.tsx                 # home — daily phrases + the Practicar panel
+    practice/                # standalone practice route + /sessions dashboard
+    api/
+      phrases/ · conjugate/  # original text-gen routes
+      vapi/setup · webhook   # configure the agent + ingest call data
+  components/
+    PracticePanel.tsx        # the voice call UI (reused by panel + route)
+    PhraseListItem.tsx       # a phrase row + its Practicar button
+  lib/
+    voice/prompt.ts          # tutor prompt (shares region logic with text phrases)
+    ai/                      # OpenAI phrase generation
+supabase/voice_schema.sql    # tables for call sessions + turns
+```

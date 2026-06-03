@@ -77,7 +77,7 @@ export async function GET(request: NextRequest) {
     const searchParams = request.nextUrl.searchParams;
     const region = searchParams.get("region") || "costa-rica";
     const formality = (searchParams.get("formality") as "formal" | "informal" | "neutral") || "neutral";
-    const count = parseInt(searchParams.get("count") || "10", 10);
+    const count = parseInt(searchParams.get("count") || "5", 10);
     const date = searchParams.get("date") || new Date().toISOString().split("T")[0];
     
     // Get recent phrases history to avoid duplicates

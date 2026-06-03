@@ -5,7 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { Sparkles, Volume2, VolumeX } from "lucide-react";
+import { Sparkles, Volume2, VolumeX, Mic } from "lucide-react";
 import { Phrase } from "@/types/phrase";
 import { VerbConjugation } from "./VerbConjugation";
 
@@ -14,6 +14,7 @@ interface PhraseListItemProps extends Omit<Phrase, "id" | "used"> {
   used: boolean;
   onToggleUsed: (id: number) => void;
   onOpenAlternatives: (phrase: { spanish: string; english: string; alternatives?: Phrase["alternatives"] }) => void;
+  onPractice: (phrase: { spanish: string; english: string; difficulty: string }) => void;
 }
 
 export function PhraseListItem({
@@ -27,6 +28,7 @@ export function PhraseListItem({
   verbs = [],
   onToggleUsed,
   onOpenAlternatives,
+  onPractice,
 }: PhraseListItemProps) {
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [speechSupported] = useState(() => {
@@ -43,9 +45,9 @@ export function PhraseListItem({
   }, []);
 
   const difficultyColors = {
-    Easy: "bg-emerald-500/30 text-white border-white/40 backdrop-blur-sm shadow-lg",
-    Medium: "bg-amber-500/30 text-white border-white/40 backdrop-blur-sm shadow-lg",
-    Hard: "bg-rose-500/30 text-white border-white/40 backdrop-blur-sm shadow-lg",
+    Easy: "bg-emerald-100/90 text-emerald-800 border-emerald-200",
+    Medium: "bg-amber-100/90 text-amber-800 border-amber-200",
+    Hard: "bg-rose-100/90 text-rose-800 border-rose-200",
   };
 
   const REFLEXIVE_PRONOUNS = new Set(["me", "te", "se", "nos", "os"]);
@@ -538,7 +540,7 @@ export function PhraseListItem({
 
   return (
     <div
-      className={`group relative flex items-center gap-2 sm:gap-3 p-2 sm:p-3 md:p-4 bg-white/30 border border-white/40 rounded-xl backdrop-blur-md hover:bg-white/40 transition-all duration-300 shadow-lg ${used ? "opacity-60" : ""
+      className={`group relative flex items-center gap-2 sm:gap-3 p-2 sm:p-3 md:p-4 bg-white/45 border border-white/50 rounded-xl backdrop-blur-md hover:bg-white/55 transition-all duration-300 shadow-lg ${used ? "opacity-60" : ""
         }`}
     >
       <div className="flex-shrink-0">
@@ -587,7 +589,7 @@ export function PhraseListItem({
         <div className="flex-shrink-0 flex items-center gap-2">
           <Badge
             variant="outline"
-            className={`${difficultyColors[difficulty]} text-[10px] sm:text-xs px-2 sm:px-2.5 py-0.5 sm:py-1 font-medium text-shadow-subtle whitespace-nowrap`}
+            className={`${difficultyColors[difficulty]} text-[10px] sm:text-xs px-2 sm:px-2.5 py-0.5 sm:py-1 font-semibold whitespace-nowrap`}
           >
             {difficulty}
           </Badge>
@@ -600,6 +602,15 @@ export function PhraseListItem({
           >
             <Sparkles className="h-3 w-3 sm:h-3.5 sm:w-3.5 md:h-4 md:w-4 drop-shadow-md" />
           </Button>
+          <button
+            type="button"
+            onClick={() => onPractice({ spanish, english, difficulty })}
+            title="Practice this phrase out loud"
+            className="inline-flex h-6 sm:h-7 md:h-8 items-center gap-1 rounded-md bg-black/70 px-2 text-[10px] sm:text-xs font-semibold text-white hover:bg-black/85 transition-colors flex-shrink-0 shadow-md"
+          >
+            <Mic className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
+            <span className="hidden sm:inline">Practicar</span>
+          </button>
         </div>
       </div>
     </div>

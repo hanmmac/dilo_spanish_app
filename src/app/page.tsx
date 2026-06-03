@@ -7,7 +7,10 @@ import { ProgressBar } from "@/components/ProgressBar";
 import { SettingsModal } from "@/components/SettingsModal";
 import { AlternativesModal } from "@/components/AlternativesModal";
 import { Auth } from "@/components/Auth";
-import { Globe, Loader2, LogOut } from "lucide-react";
+import { Globe, Loader2, LogOut, BarChart3 } from "lucide-react";
+import Link from "next/link";
+import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
+import { PracticePanel } from "@/components/PracticePanel";
 import {
   Select,
   SelectContent,
@@ -31,8 +34,8 @@ const regionImages: Record<string, { url: string; city: string; country: string 
     country: "Costa Rica"
   },
   spain: {
-    url: "/images/spain-barcelona.jpg",
-    city: "Barcelona",
+    url: "/images/madrid.webp",
+    city: "Madrid",
     country: "Spain"
   },
   mexico: {
@@ -91,7 +94,8 @@ export default function Home() {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [alternativesOpen, setAlternativesOpen] = useState(false);
   const [selectedPhrase, setSelectedPhrase] = useState<{ spanish: string; english: string; alternatives?: Phrase["alternatives"] } | null>(null);
-  const [region, setRegion] = useState("costa-rica");
+  const [region, setRegion] = useState("spain");
+  const [practicePhrase, setPracticePhrase] = useState<{ spanish: string; english: string; difficulty: string } | null>(null);
   const [formalOnly, setFormalOnly] = useState(false);
   const [isSwitchingFormality, setIsSwitchingFormality] = useState(false);
 
@@ -198,7 +202,7 @@ export default function Home() {
         
         const token = await getAuthToken();
         const response = await fetch(
-          `/api/phrases?region=${region}&formality=${formality}&count=10&date=${today}${recentPhrasesParam}`,
+          `/api/phrases?region=${region}&formality=${formality}&count=5&date=${today}${recentPhrasesParam}`,
           {
             credentials: "include",
             headers: token ? { Authorization: `Bearer ${token}` } : {},
@@ -309,24 +313,34 @@ export default function Home() {
           priority
           quality={100}
         />
-        <div className="absolute inset-0 bg-black/40" />
+        <div className="absolute inset-0 bg-gradient-to-b from-black/85 via-black/60 to-black/45" />
       </div>
 
       {/* Content */}
       <div className="relative z-10 min-h-screen">
-        <main className="max-w-4xl mx-auto px-4 sm:px-6 py-8 pb-24">
+        <main className="max-w-6xl 2xl:max-w-7xl mx-auto px-4 sm:px-6 py-8 pb-24">
             {/* Main glass container */}
-            <div className="glass rounded-3xl p-6 sm:p-8 space-y-6 bg-white/40 border-white/30">
+            <div className="glass rounded-3xl p-6 sm:p-8 space-y-6 bg-white/55 border-white/40">
               {/* Header inside glass */}
               <div className="space-y-4">
                 <div className="space-y-2">
-                  <div className="flex items-baseline gap-2">
-                    <h2 className="text-3xl sm:text-4xl font-bold text-white font-serif text-shadow-strong">
-                      Dilo
-                    </h2>
-                    <span className="text-white text-sm text-shadow-subtle">
-                      Say it
-                    </span>
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="flex items-baseline gap-2">
+                      <h2 className="text-3xl sm:text-4xl font-bold text-white font-serif text-shadow-strong">
+                        Dilo
+                      </h2>
+                      <span className="text-white text-sm text-shadow-subtle">
+                        Say it
+                      </span>
+                    </div>
+                    <Link
+                      href="/practice/sessions"
+                      title="Conversation stats"
+                      className="inline-flex items-center gap-1.5 rounded-lg border border-white/30 bg-white/10 px-3 py-1.5 text-xs font-medium text-white backdrop-blur-md hover:bg-white/20 transition-colors"
+                    >
+                      <BarChart3 className="h-3.5 w-3.5" />
+                      Admin
+                    </Link>
                   </div>
                   <p className="text-white text-sm text-shadow-subtle">
                     Incorporate each spanish phrase today and check off when you master it
@@ -342,8 +356,8 @@ export default function Home() {
                         <SelectValue placeholder="Select region" />
                       </SelectTrigger>
                       <SelectContent className="glass-dark border-white/20 bg-black/70">
+                        <SelectItem value="spain" className="text-white">Madrid, España</SelectItem>
                         {/* <SelectItem value="general" className="text-white">General/Neutral Spanish</SelectItem> */}
-                        {/* <SelectItem value="spain" className="text-white">Spain (Castilian)</SelectItem> */}
                         {/* <SelectItem value="mexico" className="text-white">Mexico</SelectItem> */}
                         {/* <SelectItem value="argentina" className="text-white">Argentina</SelectItem> */}
                         {/* <SelectItem value="colombia" className="text-white">Colombia</SelectItem> */}
@@ -402,6 +416,7 @@ export default function Home() {
                       {...phrase}
                       onToggleUsed={handleToggleUsed}
                       onOpenAlternatives={handleOpenAlternatives}
+                      onPractice={setPracticePhrase}
                     />
                   ))}
                 </div>
@@ -442,6 +457,28 @@ export default function Home() {
             </div>
           </main>
       </div>
+
+      {/* voice practice slides in from the right; phrases blur behind it */}
+      <Sheet
+        open={!!practicePhrase}
+        onOpenChange={(open) => {
+          if (!open) setPracticePhrase(null);
+        }}
+      >
+        <SheetContent
+          side="right"
+          className="w-full border-0 bg-transparent p-0 shadow-2xl sm:max-w-4xl"
+        >
+          <SheetTitle className="sr-only">Voice practice</SheetTitle>
+          {practicePhrase && (
+            <PracticePanel
+              targetPhrase={practicePhrase.spanish}
+              targetEnglish={practicePhrase.english}
+              targetDifficulty={practicePhrase.difficulty}
+            />
+          )}
+        </SheetContent>
+      </Sheet>
 
       <SettingsModal
         open={settingsOpen}
