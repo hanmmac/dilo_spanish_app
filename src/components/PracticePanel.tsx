@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import Vapi from "@vapi-ai/web";
 import { Button } from "@/components/ui/button";
-import { Mic, PhoneOff, Loader2, AlertTriangle } from "lucide-react";
+import { Mic, PhoneOff, Loader2, AlertTriangle, Hand, AudioLines } from "lucide-react";
 import { buildTopicLine, buildPhraseFirstMessage } from "@/lib/voice/prompt";
 
 type Status = "idle" | "connecting" | "active" | "ending" | "ended";
@@ -191,18 +191,16 @@ export function PracticePanel({ targetPhrase, targetEnglish, targetDifficulty }:
     setTalking(true);
   };
   const stopTalking = () => {
-    if (!pushToTalk) return;
+    if (!pushToTalk || status !== "active") return;
     vapiRef.current?.setMuted(true);
     setTalking(false);
   };
 
-  // toggling PTT mid-call: mute when turning on, unmute when turning off
-  const togglePushToTalk = () => {
-    const next = !pushToTalk;
-    setPushToTalk(next);
+  const setPushToTalkMode = (enabled: boolean) => {
+    setPushToTalk(enabled);
+    setTalking(false);
     if (status === "active") {
-      vapiRef.current?.setMuted(next);
-      setTalking(false);
+      vapiRef.current?.setMuted(enabled);
     }
   };
 
@@ -248,7 +246,7 @@ export function PracticePanel({ targetPhrase, targetEnglish, targetDifficulty }:
       )}
 
       {/* metrics */}
-      <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+      <div className="grid grid-cols-2 gap-1.5 sm:grid-cols-4">
         <Metric label="Last turn" value={lastLatency != null ? `${lastLatency} ms` : "—"} highlight={lastLatency != null && lastLatency > HIGH_LATENCY_MS} />
         <Metric label="Avg latency" value={avgLatency != null ? `${avgLatency} ms` : "—"} />
         <Metric label="Turns" value={String(turns.length)} />
@@ -256,95 +254,153 @@ export function PracticePanel({ targetPhrase, targetEnglish, targetDifficulty }:
       </div>
 
       {/* call control */}
-      <div className="flex flex-col items-center gap-2 rounded-2xl border border-white/70 bg-white/70 p-3 shadow-sm">
-        <div
-          className="flex h-11 w-11 items-center justify-center rounded-full border-2 bg-white/80 transition-all"
-          style={{
-            borderColor: status === "active" ? "#10b981" : "#94a3b8",
-            boxShadow:
-              status === "active"
-                ? `0 0 ${10 + volume * 40}px ${2 + volume * 10}px rgba(16,185,129,0.45)`
-                : "none",
-          }}
-        >
-          {status === "connecting" || status === "ending" ? (
-            <Loader2 className="h-5 w-5 animate-spin text-slate-500" />
-          ) : (
-            <Mic className={`h-5 w-5 ${status === "active" ? "text-emerald-500" : "text-slate-500"}`} />
-          )}
-        </div>
-
-        <div className="text-center text-sm font-medium text-slate-700">
-          {status === "idle" && "Tap to start a Spanish conversation"}
-          {status === "connecting" && "Connecting…"}
-          {status === "active" && (pushToTalk ? "Hold the button to talk" : "Listening — habla en español")}
-          {status === "ending" && "Ending…"}
-          {status === "ended" && "Call ended"}
-        </div>
-
-        {/* speed selector */}
-        <div className="flex flex-col items-center gap-1">
-          <div className="flex items-center gap-1 rounded-lg border border-slate-300 bg-white/90 p-1">
-            {SPEED_OPTIONS.map((opt) => (
+      <div className="rounded-2xl border border-white/70 bg-white/70 p-3 shadow-sm">
+        <div className="flex flex-col gap-2">
+          <div className="flex justify-end px-1">
+            <div className="flex rounded-md border border-slate-300 bg-white/90 p-0.5 text-[10px] font-medium">
               <button
-                key={opt.value}
-                onClick={() => setSpeechSpeed(opt.value)}
-                className={`rounded-md px-3.5 py-1.5 text-sm font-medium transition-colors ${
-                  speechSpeed === opt.value
-                    ? "bg-emerald-500 text-white"
-                    : "text-slate-600 hover:text-black"
+                type="button"
+                onClick={() => setPushToTalkMode(false)}
+                className={`rounded px-2 py-0.5 transition-colors ${
+                  !pushToTalk ? "bg-emerald-500 text-white" : "text-slate-600 hover:text-black"
                 }`}
               >
-                {opt.label}
+                Continuo
               </button>
-            ))}
+              <button
+                type="button"
+                onClick={() => setPushToTalkMode(true)}
+                className={`rounded px-2 py-0.5 transition-colors ${
+                  pushToTalk ? "bg-emerald-500 text-white" : "text-slate-600 hover:text-black"
+                }`}
+              >
+                Pulsar
+              </button>
+            </div>
           </div>
-          <span className="text-xs text-slate-500">
-            Velocidad de voz{status === "active" ? " · applies next session" : ""}
-          </span>
+
+          <div className="flex items-start">
+            {/* left: mic, speed */}
+            <div className="flex min-w-0 flex-1 flex-col items-center gap-2 px-3 py-1">
+              <div
+                className="flex h-16 w-16 shrink-0 items-center justify-center rounded-full border-2 bg-white/80 transition-all"
+                style={{
+                  borderColor: status === "active" ? "#10b981" : "#94a3b8",
+                  boxShadow:
+                    status === "active"
+                      ? `0 0 ${10 + volume * 40}px ${2 + volume * 10}px rgba(16,185,129,0.45)`
+                      : "none",
+                }}
+              >
+                {status === "connecting" || status === "ending" ? (
+                  <Loader2 className="h-7 w-7 animate-spin text-slate-500" />
+                ) : (
+                  <Mic className={`h-7 w-7 ${status === "active" ? "text-emerald-500" : "text-slate-500"}`} />
+                )}
+              </div>
+
+              <div className="flex items-center gap-0.5 rounded-md border border-slate-300 bg-white/90 p-0.5">
+                {SPEED_OPTIONS.map((opt) => (
+                  <button
+                    key={opt.value}
+                    onClick={() => setSpeechSpeed(opt.value)}
+                    className={`rounded px-2 py-0.5 text-xs font-medium transition-colors ${
+                      speechSpeed === opt.value
+                        ? "bg-emerald-500 text-white"
+                        : "text-slate-600 hover:text-black"
+                    }`}
+                  >
+                    {opt.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="w-px shrink-0 self-stretch bg-slate-300/60" aria-hidden />
+
+            {/* right: hold-to-talk or continuous indicator */}
+            <div className="flex min-w-0 flex-1 flex-col items-center gap-2 px-3 py-1">
+              {pushToTalk ? (
+                <div className="flex flex-col items-center gap-1">
+                  <button
+                    type="button"
+                    disabled={status !== "active"}
+                    onMouseDown={startTalking}
+                    onMouseUp={stopTalking}
+                    onMouseLeave={stopTalking}
+                    onTouchStart={startTalking}
+                    onTouchEnd={stopTalking}
+                    aria-label="Mantén pulsado para hablar"
+                    className="flex h-16 w-16 shrink-0 select-none items-center justify-center rounded-full border-2 bg-white/80 transition-all disabled:cursor-not-allowed disabled:opacity-40"
+                    style={{
+                      borderColor: talking ? "#10b981" : status === "active" ? "#94a3b8" : "#cbd5e1",
+                      boxShadow: talking ? "0 0 14px 4px rgba(16,185,129,0.45)" : "none",
+                    }}
+                  >
+                    <Hand className={`h-7 w-7 ${talking ? "text-emerald-500" : "text-slate-500"}`} />
+                  </button>
+                  <span className="text-center text-xs text-slate-500">
+                    {status !== "active"
+                      ? "Mantén pulsado durante la llamada"
+                      : talking
+                        ? "Escuchando… suelta para enviar"
+                        : "Mantén pulsado para hablar"}
+                  </span>
+                </div>
+              ) : (
+                <div className="flex flex-col items-center gap-1">
+                  <div
+                    className="flex h-16 w-16 shrink-0 items-center justify-center rounded-full border-2 border-slate-300 bg-white/80"
+                  >
+                    <AudioLines className="h-7 w-7 text-slate-500" />
+                  </div>
+                  <span className="text-center text-xs text-slate-500">Conversación continua</span>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* center bottom: status + session */}
+          <div className="flex flex-col items-center gap-1 border-t border-slate-300/50 pt-2">
+            <div className="text-center text-xs font-medium leading-tight text-slate-700">
+              {status === "idle" && "Tap to start a Spanish conversation"}
+              {status === "connecting" && "Connecting…"}
+              {status === "active" &&
+                (pushToTalk
+                  ? talking
+                    ? "Escuchando… suelta para enviar"
+                    : "Mantén pulsado el botón de la mano para hablar"
+                  : "Listening — habla en español")}
+              {status === "ending" && "Ending…"}
+              {status === "ended" && "Call ended"}
+            </div>
+
+            {!isLive ? (
+              <Button
+                size="sm"
+                onClick={startCall}
+                disabled={!configured}
+                className="h-8 bg-emerald-500 px-4 text-white hover:bg-emerald-600"
+              >
+                <Mic className="h-3.5 w-3.5" />
+                {status === "ended" ? "Start again" : "Start session"}
+              </Button>
+            ) : (
+              <Button
+                size="sm"
+                onClick={stopCall}
+                variant="destructive"
+                className="h-8 px-4"
+                disabled={status === "connecting"}
+              >
+                <PhoneOff className="h-3.5 w-3.5" />
+                End call
+              </Button>
+            )}
+          </div>
         </div>
 
-        {/* push-to-talk mode toggle */}
-        <button
-          onClick={togglePushToTalk}
-          className={`flex items-center gap-2 rounded-lg border px-3 py-1.5 text-xs font-medium transition-colors ${
-            pushToTalk
-              ? "border-emerald-400 bg-emerald-50 text-emerald-700"
-              : "border-slate-300 bg-white/90 text-slate-600 hover:text-black"
-          }`}
-        >
-          <span className={`inline-block h-2 w-2 rounded-full ${pushToTalk ? "bg-emerald-500" : "bg-slate-400"}`} />
-          Pulsar para hablar · {pushToTalk ? "ON" : "OFF"}
-        </button>
-
-        {status === "active" && pushToTalk && (
-          <button
-            onMouseDown={startTalking}
-            onMouseUp={stopTalking}
-            onMouseLeave={stopTalking}
-            onTouchStart={startTalking}
-            onTouchEnd={stopTalking}
-            className={`w-full select-none rounded-xl px-6 py-4 text-base font-semibold text-white shadow transition-all ${
-              talking ? "scale-[1.02] bg-emerald-600" : "bg-emerald-500 hover:bg-emerald-600"
-            }`}
-          >
-            {talking ? "🎤 Escuchando… (suelta para enviar)" : "🎤 Mantén pulsado para hablar"}
-          </button>
-        )}
-
-        {!isLive ? (
-          <Button onClick={startCall} disabled={!configured} className="bg-emerald-500 px-6 text-white hover:bg-emerald-600">
-            <Mic className="mr-2 h-4 w-4" />
-            {status === "ended" ? "Start again" : "Start session"}
-          </Button>
-        ) : (
-          <Button onClick={stopCall} variant="destructive" className="px-6" disabled={status === "connecting"}>
-            <PhoneOff className="mr-2 h-4 w-4" />
-            End call
-          </Button>
-        )}
-
-        {error && <p className="text-sm text-red-600">{error}</p>}
+        {error && <p className="mt-2 text-center text-sm text-red-600">{error}</p>}
       </div>
 
       {/* transcript */}
@@ -377,9 +433,9 @@ export function PracticePanel({ targetPhrase, targetEnglish, targetDifficulty }:
 
 function Metric({ label, value, highlight }: { label: string; value: string; highlight?: boolean }) {
   return (
-    <div className={`rounded-xl border p-2.5 ${highlight ? "border-amber-300 bg-amber-50/80" : "border-white/70 bg-white/70"}`}>
-      <div className="text-[10px] uppercase tracking-wide text-slate-600">{label}</div>
-      <div className={`mt-0.5 text-lg font-bold ${highlight ? "text-amber-600" : "text-black"}`}>{value}</div>
+    <div className={`rounded-lg border px-2 py-1 ${highlight ? "border-amber-300 bg-amber-50/80" : "border-white/70 bg-white/70"}`}>
+      <div className="text-[9px] uppercase tracking-wide text-slate-600">{label}</div>
+      <div className={`text-sm font-bold leading-tight ${highlight ? "text-amber-600" : "text-black"}`}>{value}</div>
     </div>
   );
 }
