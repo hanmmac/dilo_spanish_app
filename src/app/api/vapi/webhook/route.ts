@@ -160,6 +160,40 @@ async function persistEndOfCall(
   transport: "web" | "phone",
   message: any
 ) {
+  const durationMsTop =
+    typeof message?.durationMs === "number"
+      ? message.durationMs
+      : typeof message?.durationSeconds === "number"
+      ? Math.round(message.durationSeconds * 1000)
+      : null;
+
+  const report = {
+    recordingUrl: message?.recordingUrl ?? message?.artifact?.recordingUrl ?? null,
+    summary: message?.summary ?? message?.analysis?.summary ?? null,
+    cost: message?.cost ?? null,
+    endedReason: message?.endedReason ?? null,
+    durationSeconds: message?.durationSeconds ?? null,
+  };
+
+  // Web calls are measured on the client (see /api/voice/ingest) — that's the
+  // accurate source. Here we only attach the recording/summary, and DON'T touch
+  // the client's turns or rollups. Phone calls have no client, so we reconstruct
+  // them from the report as a fallback.
+  if (transport === "web") {
+    await supabase.from("voice_sessions").upsert(
+      {
+        vapi_call_id: callId,
+        transport,
+        status: "ended",
+        duration_ms: durationMsTop,
+        ended_reason: message?.endedReason ?? null,
+        report,
+      },
+      { onConflict: "vapi_call_id" }
+    );
+    return;
+  }
+
   // Vapi puts the transcript in different spots depending on version
   const messages: any[] =
     message?.artifact?.messages ||

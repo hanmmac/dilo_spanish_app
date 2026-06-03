@@ -55,6 +55,10 @@ export function PracticePanel({ targetPhrase, targetEnglish, targetDifficulty }:
   const lastFinalAt = useRef<number | null>(null);
   const lastFinalRole = useRef<"user" | "assistant" | null>(null);
   const transcriptEndRef = useRef<HTMLDivElement | null>(null);
+  // for posting client-measured metrics when the call ends
+  const callIdRef = useRef<string | null>(null);
+  const callStartRef = useRef<number | null>(null);
+  const postedRef = useRef(false);
 
   const configured = Boolean(PUBLIC_KEY && ASSISTANT_ID);
 
@@ -62,6 +66,25 @@ export function PracticePanel({ targetPhrase, targetEnglish, targetDifficulty }:
   useEffect(() => {
     pushToTalkRef.current = pushToTalk;
   }, [pushToTalk]);
+
+  // when a call ends, send the client-measured turns + latency to the dashboard
+  // (more accurate than the server reconstructing it from the end-of-call report)
+  useEffect(() => {
+    if (status !== "ended" || postedRef.current || !callIdRef.current) return;
+    if (transcript.length === 0) return;
+    postedRef.current = true;
+    fetch("/api/voice/ingest", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        callId: callIdRef.current,
+        durationMs: callStartRef.current ? Date.now() - callStartRef.current : null,
+        interruptions,
+        latencies: turns.map((t) => t.latencyMs),
+        transcript: transcript.map((l) => ({ role: l.role, text: l.text })),
+      }),
+    }).catch(() => {});
+  }, [status, transcript, turns, interruptions]);
 
   useEffect(() => {
     transcriptEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -77,11 +100,15 @@ export function PracticePanel({ targetPhrase, targetEnglish, targetDifficulty }:
     assistantSpeaking.current = false;
     lastFinalAt.current = null;
     lastFinalRole.current = null;
+    callIdRef.current = null;
+    callStartRef.current = null;
+    postedRef.current = false;
   };
 
   const wireEvents = useCallback((vapi: Vapi) => {
     vapi.on("call-start", () => {
       setStatus("active");
+      callStartRef.current = Date.now();
       // in PTT mode the mic starts muted — held button unmutes it
       if (pushToTalkRef.current) vapi.setMuted(true);
     });
@@ -171,7 +198,8 @@ export function PracticePanel({ targetPhrase, targetEnglish, targetDifficulty }:
       if (targetPhrase) {
         overrides.firstMessage = buildPhraseFirstMessage(targetPhrase);
       }
-      await vapi.start(ASSISTANT_ID!, overrides);
+      const call: any = await vapi.start(ASSISTANT_ID!, overrides);
+      if (call?.id) callIdRef.current = call.id;
     } catch (e: any) {
       console.error(e);
       setError(e?.message || "Could not start the call");
